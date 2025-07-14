@@ -1,3 +1,4 @@
+# home/code.nix (修正后)
 { pkgs, dotfiles, ... }:
 
 {
@@ -5,7 +6,6 @@
     neovim
     lunarvim
     uv
-    fnm
     ansible
     git-lfs
   ];
@@ -14,22 +14,17 @@
     # Git 配置
     git = {
       enable = true;
-      
       userName = "Lossilklauralin";
       userEmail = "lossilklauralin@gmail.com";
 
+      # --- 直接被模块支持的顶层选项 ---
       init.defaultBranch = "main";
-      
       lfs.enable = true;
-
       pull.rebase = true;
-      fetch.prune = true;
-      push.followTags = true;
-      rebase.autoSquash = true;
       rerere.enabled = true;
       help.autocorrect = "prompt";
-      diff.renames = true;
 
+      # --- 所有其他选项都必须放在 extraConfig 中 ---
       extraConfig = {
         core = {
           autocrlf = false;
@@ -46,18 +41,22 @@
           sort = "version:refname";
         };
         diff = {
+          renames = true; # <--- 已移入
           algorithm = "histogram";
           colorMoved = "plain";
           mnemonicPrefix = true;
         };
         push = {
+          followTags = true; # <--- 已移入
           default = "simple";
           autoSetupRemote = true;
         };
         fetch = {
+          prune = true; # <--- 已移入
           pruneTags = true;
         };
         rebase = {
+          autoSquash = true; # <--- 已移入
           autoStash = true;
           updateRefs = true;
         };
@@ -68,15 +67,16 @@
           conflictstyle = "zdiff3";
         };
       };
-    }; # <--- Git 配置结束
+    }; # <--- programs.git 结束
 
-    # Language tools 和其他 programs
+    # --- 其他程序模块 ---
     gh.enable = true;
     go.enable = true;
     bun.enable = true;
     lazygit.enable = true;
     rustup.enable = true;
-  }; 
+    fnm.enable = true;
+  };
 
   home.file = {
     "./.config/lvim/config.lua".source = "${dotfiles}/config/.config/lvim/config.lua";
