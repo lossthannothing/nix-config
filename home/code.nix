@@ -5,6 +5,7 @@
     neovim
     lunarvim
     uv
+    fnm
     ansible
     git-lfs
   ];
@@ -75,7 +76,6 @@
     bun.enable = true;
     lazygit.enable = true;
     rustup.enable = true;
-    fnm.enable = true; 
   }; 
 
   home.file = {
