@@ -55,7 +55,8 @@
     nixosConfigurations."LossNixOS-WSL" = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
-        ./os/nixos-wsl.nix # <-- 你的系统配置文件
+        nixos-wsl.nixosModules.wsl
+        ./os/nixos-wsl.nix
       ];
     };
     # # darwin system configuration
