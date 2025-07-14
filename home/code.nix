@@ -83,7 +83,7 @@
     
     rustup.enable = true;
     fnm.enable = true;
-  }
+  };
   
   home.file = {
     "./.config/lvim/config.lua".source = "${dotfiles}/config/.config/lvim/config.lua";
