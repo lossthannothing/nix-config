@@ -1,4 +1,3 @@
-# home/code.nix (修正后)
 { pkgs, dotfiles, ... }:
 
 {
@@ -12,20 +11,16 @@
   ];
 
   programs = {
-    # Git 配置
     git = {
       enable = true;
       userName = "Lossilklauralin";
       userEmail = "lossilklauralin@gmail.com";
 
-      # --- 直接被模块支持的顶层选项 ---
       init.defaultBranch = "main";
       lfs.enable = true;
       pull.rebase = true;
       rerere.enabled = true;
-      help.autocorrect = "prompt";
 
-      # --- 所有其他选项都必须放在 extraConfig 中 ---
       extraConfig = {
         core = {
           autocrlf = false;
@@ -42,22 +37,22 @@
           sort = "version:refname";
         };
         diff = {
-          renames = true; # <--- 已移入
+          renames = true;
           algorithm = "histogram";
           colorMoved = "plain";
           mnemonicPrefix = true;
         };
         push = {
-          followTags = true; # <--- 已移入
+          followTags = true;
           default = "simple";
           autoSetupRemote = true;
         };
         fetch = {
-          prune = true; # <--- 已移入
+          prune = true;
           pruneTags = true;
         };
         rebase = {
-          autoSquash = true; # <--- 已移入
+          autoSquash = true;
           autoStash = true;
           updateRefs = true;
         };
@@ -67,10 +62,12 @@
         merge = {
           conflictstyle = "zdiff3";
         };
+        help = {
+          autocorrect = "prompt";
+        };
       };
-    }; # <--- programs.git 结束
+    };
 
-    # --- 其他程序模块 ---
     gh.enable = true;
     go.enable = true;
     bun.enable = true;
