@@ -6,6 +6,7 @@
     lunarvim
     uv
     fnm
+    rustup
     ansible
   ];
 
@@ -75,7 +76,6 @@
     go.enable = true;
     bun.enable = true;
     lazygit.enable = true;
-    rustup.enable = true;
   };
 
   home.file = {
