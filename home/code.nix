@@ -16,12 +16,14 @@
       userName = "Lossilklauralin";
       userEmail = "lossilklauralin@gmail.com";
 
-      init.defaultBranch = "main";
       lfs.enable = true;
       pull.rebase = true;
       rerere.enabled = true;
 
       extraConfig = {
+        init = { # Moved init here
+          defaultBranch = "main";
+        };
         core = {
           autocrlf = false;
           eol = "lf";
