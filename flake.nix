@@ -13,8 +13,12 @@
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     dotfiles = {
-      url = "github:lossthannothing/.dotfiles/main";
+      url = "github:lossthannothing/.dotfiles/master";
       flake = false;
+    };
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
