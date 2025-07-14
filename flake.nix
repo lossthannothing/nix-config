@@ -22,7 +22,7 @@
     };
   };
 
-  outputs = { nixpkgs, home-manager, dotfiles, nix-darwin, ... }@inputs: {
+  outputs = { nixpkgs, home-manager, dotfiles, nix-darwin, nixos-wsl, ... }@inputs: {
     # home manager configurations
     homeConfigurations.linux = home-manager.lib.homeManagerConfiguration {
       pkgs = nixpkgs.legacyPackages.aarch64-linux;
