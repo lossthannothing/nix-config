@@ -18,8 +18,8 @@
       enable=true;
       defaultCommand = "fd --type f --hidden --follow --exclude .git"; # 使用 fd 替代 find
       defaultOptions = [ "--height 40%" "--layout=reverse" "--border" ];
-    }
-  }
+    };
+  };
 
   home.file = {
     # 主入口文件
