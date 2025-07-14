@@ -7,7 +7,6 @@
     uv
     fnm
     ansible
-    git-lfs
   ];
 
   programs = {
@@ -15,14 +14,20 @@
       enable = true;
       userName = "Lossilklauralin";
       userEmail = "lossilklauralin@gmail.com";
-
       lfs.enable = true;
-      pull.rebase = true;
-      rerere.enabled = true;
+      # Home Manager programs.git 模块直接支持的顶层选项到此为止。
+      # 其他所有Git配置，即使在Git自身中是顶层，也必须放入 extraConfig。
 
       extraConfig = {
-        init = { # Moved init here
+        init = {
           defaultBranch = "main";
+        };
+        pull = {
+          rebase = true;
+        };
+        rerere = {
+          enabled = true; # 将 rerere.enabled 移动到这里
+          autoupdate = true;
         };
         core = {
           autocrlf = false;
@@ -58,9 +63,6 @@
           autoStash = true;
           updateRefs = true;
         };
-        rerere = {
-          autoupdate = true;
-        };
         merge = {
           conflictstyle = "zdiff3";
         };
@@ -69,7 +71,6 @@
         };
       };
     };
-
     gh.enable = true;
     go.enable = true;
     bun.enable = true;
