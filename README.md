@@ -23,5 +23,5 @@ sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run nix-darwin/
 
 ```bash
 cd nix-config
-sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .
+sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .#LossNixOS-WSL
 ```
