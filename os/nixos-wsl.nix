@@ -36,7 +36,7 @@
   # --------------------------------------------------------------------
   # 2. 用户和 Home Manager 集成 (User & Home Manager Integration)
   # --------------------------------------------------------------------
-
+  programs.zsh.enable = true;
   # 创建一个系统用户 "loss"。这必须和您 home.nix 中的用户名完全一致。
   users.users.loss = {
     isNormalUser = true;
