@@ -7,43 +7,46 @@
   # General System Level Configuration
   # --------------------------------------------------------------------
 
-  # Nix Flakes features (typically a global setting, suitable here).
+  # Enable Nix Flakes features (a good global setting for flakes-based configurations).
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
-  # System state version; ensure this matches your actual NixOS version.
-  system.stateVersion = "24.05"; # Confirm your actual stateVersion.
+  # System state version; important for upgrades and compatibility.
+  # Ensure this matches your actual NixOS version (e.g., "24.05" or "25.05").
+  system.stateVersion = "25.05"; # Updated to 25.05 as per your README's rebuild command
 
-  # Networking and timezone (define general defaults here; can be overridden in flake.nix for specific configurations).
-  networking.hostName = "nixos-generic"; # A generic hostname.
+  # Networking and timezone settings. These are general defaults that can be
+  # overridden by more specific configurations (like in os/wsl.nix or flake.nix).
+  networking.hostName = "nixos-generic"; # A generic hostname for any NixOS instance.
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
   # System-level packages.
-  # Only place core tools needed by the system administrator or all users here.
-  # Avoid packages like neovim, zsh, etc., as Home Manager will install those for your user.
+  # Only include core tools necessary for the system or all users.
+  # User-specific tools (like Neovim, specific shells) should typically go in Home Manager.
   environment.systemPackages = with pkgs; [
-    wget # wget is a general utility, suitable here.
-    htop
+    wget # A common utility, useful on most systems.
+    htop # A process viewer.
+    # Add other universally needed system packages here.
   ];
 
   # --------------------------------------------------------------------
   # User and Shell Configuration
   # --------------------------------------------------------------------
 
-  # Create a system user "loss". This must exactly match the username in your home.nix.
+  # Define the system user 'loss'. This username must match the one used in your
+  # Home Manager configuration and the 'wsl.defaultUser' setting.
   users.users.loss = {
     isNormalUser = true;
     description = "loss";
-    extraGroups = [ "wheel" ]; # The `wheel` group grants sudo privileges.
-    # Set the default shell. Home Manager will inject detailed configurations for zsh later.
+    extraGroups = [ "wheel" ]; # Add to 'wheel' group for sudo privileges.
+    # Set the default shell for the user. Home Manager will provide detailed Zsh configuration.
     shell = pkgs.zsh;
   };
 
-  # Basic enablement of Zsh as the system shell; detailed configuration is handled by Home Manager.
+  # Enable Zsh as a system program.
+  # This provides the Zsh executable; Home Manager will layer on top with dotfiles and plugins.
   programs.zsh.enable = true;
 
-  # Other general configurations you want on all NixOS systems...
-  # For example:
+  # Add any other general NixOS system configurations here.
+  # Example: Enable SSH daemon for remote access (if applicable).
   # services.openssh.enable = true;
-  # services.tlp.enable = true; # If it's a laptop.
-  # security.sudo.wheelNeedsPassword = false; # Set sudo behavior as needed.
 }
