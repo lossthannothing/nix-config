@@ -12,7 +12,10 @@
     neofetch
   ];
   programs = {
-    zoxide.enable = true;
+    zoxide = {
+      enable = true;
+      enableZshIntegration = true;
+    };
     zsh = {
       enable = true;
 
