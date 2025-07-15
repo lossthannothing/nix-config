@@ -12,6 +12,12 @@
   # Set the default user for the WSL instance. This is crucial for initial login.
   # It should match the user defined in ./os/nixos.nix.
   wsl.defaultUser = "loss"; # Ensure this matches the 'loss' user you're setting up.
+  #wsl netmode  mirrored
+  wsl.usbip = {
+    enable = true;
+    # Tell usbip to connect to the Windows host via the loopback address.
+    snippetIpAddress = "127.0.0.1";
+  };
   # Override the general hostname for this specific WSL instance.
   networking.hostName = "nixos-wsl";
 
