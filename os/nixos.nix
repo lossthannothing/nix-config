@@ -8,7 +8,26 @@
   # --------------------------------------------------------------------
 
   # Enable Nix Flakes features (a good global setting for flakes-based configurations).
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix = {
+    # Nix settings are grouped here.
+    settings = {
+      # This line you already have.
+      experimental-features = [ "nix-command" "flakes" ];
+
+      # --- Add these two settings for the mirrors ---
+      # A list of servers providing pre-built packages (binary cache).
+      substituters = [
+        "httpss://mirrors.ustc.edu.cn/nix-channels/store"
+        "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+      ];
+
+      # Public keys to verify the authenticity of the binary cache.
+      # The USTC and TUNA mirrors use the same key as the official cache.
+      trusted-public-keys = [
+        "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+      ];
+    };
+  };
   # System state version; important for upgrades and compatibility.
   # Ensure this matches your actual NixOS version (e.g., "24.05" or "25.05").
   system.stateVersion = "25.05"; # Updated to 25.05 as per your README's rebuild command
