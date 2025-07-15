@@ -2,6 +2,11 @@
 
 This repository manages my Nix configurations for various operating systems.
 
+First download nix-config in cli
+```
+git clone --recurse-submodules https://github.com/lossthannothing/nix-config.git
+```
+
 ---
 
 ## Home Manager
