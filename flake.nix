@@ -1,74 +1,93 @@
 {
-  description = "My personal NixOS/Home Manager configuration";
+  description = "A personal Nix configuration for NixOS and Home Manager.";
 
   inputs = {
+    # Core package set from the unstable channel.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    # Home Manager
-    home-manager.url = "github:nix-community/home-manager";
-    # Home Manager should follow the nixpkgs version from this flake
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    # Home Manager for user-level package management.
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
-    # Your dotfiles repository, marked as a non-flake input
+    # NixOS on WSL integration module.
+    nixos-wsl.url = "github:nix-community/NixOS-WSL";
+
+    # Non-flake input for sourcing dotfiles.
     dotfiles = {
       url = "github:lossthannothing/.dotfiles/master";
       flake = false;
     };
 
-    # NixOS on WSL support module
-    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
+    # --- Darwin Placeholder ---
   };
 
-  outputs = { self, nixpkgs, home-manager, dotfiles, nixos-wsl, ... }@inputs: {
-    # Home Manager configurations
-    # These configurations are defined independently and can be referenced by different system configurations.
-    homeConfigurations = {
-      # For AArch64 Linux (if you have an ARM-based Linux machine)
-      linux = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.aarch64-linux;
-        modules = [
-          ./home/home.nix
-          ./home/code.nix
-          ./home/shell.nix
-        ];
-        extraSpecialArgs = { inherit dotfiles; };
+  outputs = { self, nixpkgs, home-manager, dotfiles, nixos-wsl, ... }@inputs:
+    let
+      # A common set of Home Manager modules to be reused across configurations.
+      homeModules = [
+        ./home/home.nix
+        ./home/code.nix
+        ./home/shell.nix
+      ];
+
+      # Common special arguments passed to all modules.
+      specialArgs = { inherit dotfiles; };
+
+    in {
+      # Standalone Home Manager configurations for non-NixOS systems (e.g., Ubuntu).
+      # These can be activated using `home-manager switch --flake .#<name>`.
+      homeConfigurations = {
+        # For aarch64 Linux systems.
+        "linux" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+          modules = homeModules;
+          extraSpecialArgs = specialArgs;
+        };
+
+        # For x86_64 Linux systems.
+        "x86_64-linux" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          modules = homeModules;
+          extraSpecialArgs = specialArgs;
+        };
+
+        # --- Darwin Placeholder ---
+        # Uncomment to enable standalone Home Manager for macOS.
+        # "darwin" = home-manager.lib.homeManagerConfiguration {
+        #   pkgs = nixpkgs.legacyPackages.x86_64-darwin;
+        #   # Note: macOS might require a different set of home modules.
+        #   modules = homeModules;
+        #   extraSpecialArgs = specialArgs;
+        # };
       };
-      # For x86_64 Linux (this is what your WSL instance will use)
-      x86_64-linux = home-manager.lib.homeManagerConfiguration {
-        pkgs = nixpkgs.legacyPackages.x86_64-linux;
-        modules = [
-          ./home/home.nix
-          ./home/code.nix
-          ./home/shell.nix
-        ];
-        extraSpecialArgs = { inherit dotfiles; };
+
+      # NixOS system configurations.
+      # These are built using `nixos-rebuild switch --flake .#<name>`.
+      nixosConfigurations = {
+        "LossNixOS-WSL" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = specialArgs;
+          modules = [
+            # Core NixOS-WSL integration.
+            nixos-wsl.nixosModules.default
+
+            # Custom system-level modules.
+            ./os/nixos.nix
+            ./os/wsl.nix
+
+            # Home Manager integration as a NixOS module.
+            home-manager.nixosModules.home-manager {
+              home-manager.useGlobalPkgs = true;
+              home-manager.useUserPackages = true;
+              home-manager.extraSpecialArgs = specialArgs;
+              home-manager.users.loss = { imports = homeModules; };
+            }
+          ];
+        };
       };
+
+      # --- Darwin Placeholder ---
     };
-
-    # NixOS system configurations
-    nixosConfigurations = {
-      # Configuration for your NixOS on WSL instance
-      # This name matches what you use in your nixos-rebuild command.
-      "LossNixOS-WSL" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          # Import the NixOS-WSL module, which handles core WSL integration.
-          nixos-wsl.nixosModules.default
-
-          # Import your general NixOS configuration (applies to any NixOS).
-          ./os/nixos.nix
-
-          # Import your WSL-specific system configuration.
-          ./os/wsl.nix
-
-          # Integrate Home Manager into this NixOS system configuration.
-          home-manager.nixosModules.home-manager {
-            home-manager.useUserPackages = true;
-            # Use nixid to reference the x86_64-linux homeConfiguration defined in this flake.
-            home-manager.users.loss = self.homeConfigurations.x86_64-linux;
-          }
-        ];
-      };
-    };
-  };
 }
