@@ -16,10 +16,7 @@
     };
 
     # NixOS on WSL support module
-    nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL";
-      nixos-wsl.inputs.nixpkgs.follows = "nixpkgs";
-    };
+    nixos-wsl.url = "github:nix-community/NixOS-WSL/main";
   };
 
   outputs = { self, nixpkgs, home-manager, dotfiles, nixos-wsl, ... }@inputs: {
