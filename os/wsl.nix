@@ -8,7 +8,7 @@
   # --------------------------------------------------------------------
 
   # Enable the core WSL integration provided by NixOS-WSL.
-  # wsl.enable = true;
+  wsl.enable = true;
   # Set the default user for the WSL instance. This is crucial for initial login.
   # It should match the user defined in ./os/nixos.nix.
   wsl.defaultUser = "loss"; # Ensure this matches the 'loss' user you're setting up.
