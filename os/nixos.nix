@@ -15,7 +15,7 @@
 
   # Networking and timezone settings. These are general defaults that can be
   # overridden by more specific configurations (like in os/wsl.nix or flake.nix).
-  networking.hostName = "nixos-generic"; # A generic hostname for any NixOS instance.
+  networking.hostName = lib.mkDefault "nixos"; # A generic hostname for any NixOS instance.
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 
