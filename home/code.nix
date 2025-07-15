@@ -7,7 +7,9 @@
     uv
     fnm
     rustup
+    claude-code
     ansible
+    nixfmt-rfc-style
   ];
 
   programs = {
@@ -20,6 +22,12 @@
       # 其他所有Git配置，即使在Git自身中是顶层，也必须放入 extraConfig。
 
       extraConfig = {
+        http = {
+          proxy = "socks5://127.0.0.1:10808";
+        };
+        https = {
+          proxy = "socks5://127.0.0.1:10808";
+        };
         init = {
           defaultBranch = "main";
         };
