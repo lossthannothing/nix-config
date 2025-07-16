@@ -13,16 +13,45 @@ git clone --recurse-submodules https://github.com/lossthannothing/nix-config.git
 
 Applies your user environment configuration. Run these after your NixOS or Nix-Darwin system is set up and you're logged in as the intended user.
 
+### Recommended Usage (Auto-detect Architecture)
+
 ```bash
-# Linux (ARM)
+# Simplest: Auto-detect current system architecture
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .
+```
+
+### Architecture-Specific Usage
+
+```bash
+# Linux (x86_64, e.g., WSL, most desktops)
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@x86_64-linux
+
+# Linux (ARM64, e.g., Raspberry Pi, Apple Silicon Linux VMs)
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@aarch64-linux
+
+# macOS (Intel)
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@x86_64-darwin
+
+# macOS (Apple Silicon)
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@aarch64-darwin
+```
+
+### Alternative: Using Username
+
+```bash
+# Explicit username (same as auto-detect)
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss
+```
+
+### Legacy Usage (Backward Compatibility)
+
+```bash
+# Linux (ARM) - legacy alias
 NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#linux
 
-# Linux (x86_64, e.g., WSL)
+# Linux (x86_64) - legacy alias
 NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#x86_64-linux
-
-# macOS
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#darwin
-````
+```
 
 -----
 
@@ -59,7 +88,7 @@ For first-time setup or changing the default user from `nixos` to your configure
 2.  **Build System Configuration:** In your WSL shell, build and prepare the new system generation for the next boot.
     ```bash
     cd ~/nix-config
-    sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- boot --flake .#LossNixOS-WSL
+    sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- boot --flake .#nixos-wsl
     ```
 3.  **Restart WSL Instance:** Execute in **Windows PowerShell or CMD** to apply the default user change.
     ```powershell
@@ -70,7 +99,7 @@ For first-time setup or changing the default user from `nixos` to your configure
 4.  **Activate Home Manager:** Re-open your WSL shell. Once confirmed logged in as `loss`, activate your Home Manager configuration.
     ```bash
     cd ~/nix-config
-    NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#x86_64-linux
+    NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .
     ```
 5. **Clear Up Default User Config**: Clear up default user's nix-config from github
     ```bash
@@ -83,5 +112,24 @@ For routine updates to your NixOS WSL2 system configuration (e.g., adding packag
 
 ```bash
 cd nix-config
-sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .#LossNixOS-WSL
+sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .#nixos-wsl
+```
+
+---
+
+## Quick Reference
+
+### Shell Aliases (Available after Home Manager setup)
+
+```bash
+# Home Manager
+hms          # Switch Home Manager config (auto-detect architecture)
+hms-x86      # Switch to x86_64-linux config
+hms-arm      # Switch to aarch64-linux config
+
+# Maintenance
+hmg          # Show Home Manager generations
+hmtoday      # Remove generations older than 1 day
+hmwk         # Remove generations older than 1 week
+hmu          # Update flake inputs
 ```

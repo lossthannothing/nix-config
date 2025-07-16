@@ -23,8 +23,19 @@
     # --- Darwin Placeholder ---
   };
 
-  outputs = { self, nixpkgs, home-manager, dotfiles, nixos-wsl, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      home-manager,
+      dotfiles,
+      nixos-wsl,
+      ...
+    }@inputs:
     let
+      # User configuration
+      username = "loss";
+
       # A common set of Home Manager modules to be reused across configurations.
       homeModules = [
         ./home/home.nix
@@ -35,57 +46,60 @@
       # Common special arguments passed to all modules.
       specialArgs = { inherit dotfiles; };
 
-    in {
-      # Standalone Home Manager configurations for non-NixOS systems (e.g., Ubuntu).
-      # These can be activated using `home-manager switch --flake .#<name>`.
-      homeConfigurations = {
-        # For aarch64 Linux systems.
-        "linux" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.aarch64-linux;
+      # Helper function to create Home Manager configurations
+      mkHomeConfig =
+        system:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
           modules = homeModules;
           extraSpecialArgs = specialArgs;
         };
 
-        # For x86_64 Linux systems.
-        "x86_64-linux" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-          modules = homeModules;
-          extraSpecialArgs = specialArgs;
-        };
+    in
+    {
+      # Standalone Home Manager configurations
+      homeConfigurations = {
+        # Primary configurations: username@architecture
+        "${username}@x86_64-linux" = mkHomeConfig "x86_64-linux";
+        "${username}@aarch64-linux" = mkHomeConfig "aarch64-linux";
+        "${username}@x86_64-darwin" = mkHomeConfig "x86_64-darwin";
+        "${username}@aarch64-darwin" = mkHomeConfig "aarch64-darwin";
+
+        # 智能默认：自动检测当前系统架构
+        "${username}" = mkHomeConfig (builtins.currentSystem or "x86_64-linux");
+
+        # Backward compatibility aliases
+        "x86_64-linux" = mkHomeConfig "x86_64-linux";
+        "linux" = mkHomeConfig "aarch64-linux";
 
         # --- Darwin Placeholder ---
-        # Uncomment to enable standalone Home Manager for macOS.
-        # "darwin" = home-manager.lib.homeManagerConfiguration {
-        #   pkgs = nixpkgs.legacyPackages.x86_64-darwin;
-        #   # Note: macOS might require a different set of home modules.
-        #   modules = homeModules;
-        #   extraSpecialArgs = specialArgs;
-        # };
       };
 
-      # NixOS system configurations.
-      # These are built using `nixos-rebuild switch --flake .#<name>`.
+      # NixOS system configurations - 按主机名命名
       nixosConfigurations = {
-        "LossNixOS-WSL" = nixpkgs.lib.nixosSystem {
+        # 与 networking.hostName 保持一致
+        "nixos-wsl" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = specialArgs;
           modules = [
-            # Core NixOS-WSL integration.
             nixos-wsl.nixosModules.default
-
-            # Custom system-level modules.
             ./os/nixos.nix
             ./os/wsl.nix
-
-            # Home Manager integration as a NixOS module.
-            home-manager.nixosModules.home-manager {
+            home-manager.nixosModules.home-manager
+            {
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.extraSpecialArgs = specialArgs;
-              home-manager.users.loss = { imports = homeModules; };
+              home-manager.users.${username} = {
+                imports = homeModules;
+              };
             }
           ];
         };
+
+        # 如果有其他系统，按主机名命名
+        # "desktop" = nixpkgs.lib.nixosSystem { ... };
+        # "laptop" = nixpkgs.lib.nixosSystem { ... };
       };
 
       # --- Darwin Placeholder ---

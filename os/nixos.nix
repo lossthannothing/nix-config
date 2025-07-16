@@ -1,6 +1,11 @@
 # os/nixos.nix
 
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   # --------------------------------------------------------------------
@@ -12,12 +17,15 @@
     # Nix settings are grouped here.
     settings = {
       # This line you already have.
-      experimental-features = [ "nix-command" "flakes" ];
+      experimental-features = [
+        "nix-command"
+        "flakes"
+      ];
 
       # --- Add these two settings for the mirrors ---
       # A list of servers providing pre-built packages (binary cache).
       substituters = [
-        "httpss://mirrors.ustc.edu.cn/nix-channels/store"
+        "https://mirrors.ustc.edu.cn/nix-channels/store"
         "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
       ];
 

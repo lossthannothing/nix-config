@@ -1,1 +1,12 @@
-*.lock
+# Á	¯ƒØÏ‡ö - +Æ¥IOáo
+.private_env.sh
+**/private/env
+**/.config/private/
+
+# Home Manager „Á	Mn
+**/.config/nix-private/
+
+# vÖïı„Á	‡ö
+.env.local
+.env.private
+**/.secrets/
