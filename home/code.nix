@@ -90,7 +90,7 @@
 
     # 单文件放宽- 不会锁定文件读写权限
     ".claude/commands/spec.md" = {
-      source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nix-config/dotfiles/claude/.claude/commands/spec.md";
+      source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/commands/spec.md";
     };
   };
 }

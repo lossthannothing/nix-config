@@ -1,17 +1,40 @@
 # os/wsl.nix
 
-{ config, pkgs, lib, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
-  # Meskill 提供的 bashWrapper 方案
-  bashWrapper = with pkgs;
+  # Meskill 提供的 bashWrapper 方案 用于处理cursor
+  bashWrapper =
+    with pkgs;
     runCommand "nixos-wsl-bash-wrapper"
       {
         nativeBuildInputs = [ makeWrapper ];
-      } ''
-      makeWrapper ${bashInteractive}/bin/bash $out/bin/bash \
-        --prefix PATH ':' ${lib.makeBinPath ([ systemd gnugrep coreutils gnutar gzip getconf gnused procps which gawk wget curl util-linux ])}
-    '';
+      }
+      ''
+        makeWrapper ${bashInteractive}/bin/bash $out/bin/bash \
+          --prefix PATH ':' ${
+            lib.makeBinPath ([
+              systemd
+              gnugrep
+              coreutils
+              gnutar
+              gzip
+              getconf
+              gnused
+              procps
+              which
+              gawk
+              wget
+              curl
+              util-linux
+            ])
+          }
+      '';
 in
 {
   # --------------------------------------------------------------------
@@ -20,9 +43,9 @@ in
 
   # 将所有 wsl 配置合并到一个块中
   wsl = {
-    enable = true;          # 启用 NixOS-WSL 核心功能
-    defaultUser = "loss";   # 设置默认用户
-    wrapBinSh = true;       # 启用 bash 包装器功能
+    enable = true; # 启用 NixOS-WSL 核心功能
+    defaultUser = "loss"; # 设置默认用户
+    wrapBinSh = true; # 启用 bash 包装器功能
     usbip = {
       enable = true;
       # Tell usbip to connect to the Windows host via the loopback address.
@@ -47,7 +70,7 @@ in
   # --- Solution for VS Code Remote SSH on WSL: Using nix-ld ---
   programs.nix-ld.enable = true;
 
-  # 确保 wget (以及其他可能的依赖) 在系统包中
+  # 确保 cursor需要的 wget (以及其他可能的依赖) 在wsl系统包中
   environment.systemPackages = [
     pkgs.wget
   ];

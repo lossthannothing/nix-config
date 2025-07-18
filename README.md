@@ -1,135 +1,108 @@
-# Nix Configuration
 
-This repository manages my Nix configurations for various operating systems.
+# Nix Configurations
 
-First download nix-config in cli
+This repository contains Nix configurations for NixOS, macOS, and other Linux systems.
+
+First, clone this repository:
 ```
 git clone --recurse-submodules https://github.com/lossthannothing/nix-config.git
 ```
 
 ---
 
-## Home Manager
+## 1. NixOS (including WSL) Usage
 
-Applies your user environment configuration. Run these after your NixOS or Nix-Darwin system is set up and you're logged in as the intended user.
+On NixOS, Home Manager is integrated as a system module. All system-level and user-level configurations are managed uniformly through a single command to ensure atomic updates and configuration persistence.
 
-### Recommended Usage (Auto-detect Architecture)
+### System Updates & Configuration Switching
 
+For any configuration change (system or user), run the following command from the `nix-config` root directory:
 ```bash
-# Simplest: Auto-detect current system architecture
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .
+# cd into the config directory
+cd nix-config
+
+# Build and switch to the new configuration
+sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .#nixos-wsl
 ```
 
-### Architecture-Specific Usage
+### First-Time Setup (WSL Only)
 
-```bash
-# Linux (x86_64, e.g., WSL, most desktops)
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@x86_64-linux
+This process is for the initial setup or for changing the default WSL user.
 
-# Linux (ARM64, e.g., Raspberry Pi, Apple Silicon Linux VMs)
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@aarch64-linux
+1.  **Confirm Configuration:** Ensure the target user and WSL default user are defined in `/os/nixos-wsl.nix`.
+2.  **Build the System:** This command builds the new system and makes it active on the next boot.
+    ```bash
+    cd ~/nix-config
+    sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- boot --flake .#nixos-wsl
+    ```
+3.  **Restart the WSL Instance:** Execute this in Windows PowerShell or CMD.
+    ```powershell
+    wsl -t NixOS
+    ```
+4.  **Verify and Clean Up:** After rebooting, the system should be logged in as the new user. Once confirmed, you can remove the original default user's configuration files.
+    ```bash
+    sudo rm -rf /home/nixos/nix-config
+    ```
 
-# macOS (Intel)
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@x86_64-darwin
+---
 
-# macOS (Apple Silicon)
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss@aarch64-darwin
-```
+## 2. Nix-Darwin (macOS) Usage
 
-### Alternative: Using Username
+Nix-Darwin uses Nix to manage system-level configurations for macOS, similar to NixOS. Home Manager is integrated as a module and updated uniformly with the system via the `darwin-rebuild` command.
 
-```bash
-# Explicit username (same as auto-detect)
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#loss
-```
+### System Updates & Configuration Switching
 
-### Legacy Usage (Backward Compatibility)
-
-```bash
-# Linux (ARM) - legacy alias
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#linux
-
-# Linux (x86_64) - legacy alias
-NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .#x86_64-linux
-```
-
------
-
-## Nix-Darwin (macOS)
-
-Builds and switches your Nix-Darwin system configuration. Run this from the root of your `nix-config` directory.
-
+Run the following command from the `nix-config` root to atomically update both system and user configurations:
 ```bash
 cd nix-config
 sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run nix-darwin/nix-darwin-25.05#darwin-rebuild -- switch --flake .
 ```
 
------
+---
 
-## NixOS in WSL
+## 3. Standalone Home Manager (Other Linux Distros)
 
-Guides the setup and updates for your NixOS WSL2 system. Run these commands from the root of your `nix-config` directory.
+For non-NixOS/Nix-Darwin systems, Home Manager can be used as a standalone tool to manage the user environment.
 
-### Initial Setup & User Change
+### Applying the Configuration
 
-For first-time setup or changing the default user from `nixos` to your configured user (e.g., `loss`).
-
-1.  **Confirm Configuration:** Ensure `/os/nixos-wsl.nix` includes the user and default WSL user settings:
-    ```nix
-    # /os/nixos-wsl.nix
-    users.users.loss = {
-      isNormalUser = true;
-      description = "loss";
-      extraGroups = [ "wheel" ];
-      shell = pkgs.zsh;
-    };
-    wsl.defaultUser = "loss";
-    ```
-2.  **Build System Configuration:** In your WSL shell, build and prepare the new system generation for the next boot.
-    ```bash
-    cd ~/nix-config
-    sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- boot --flake .#nixos-wsl
-    ```
-3.  **Restart WSL Instance:** Execute in **Windows PowerShell or CMD** to apply the default user change.
-    ```powershell
-    wsl -t NixOS
-    wsl -d NixOS --user root exit
-    wsl -t NixOS
-    ```
-4.  **Activate Home Manager:** Re-open your WSL shell. Once confirmed logged in as `loss`, activate your Home Manager configuration.
-    ```bash
-    cd ~/nix-config
-    NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .
-    ```
-5. **Clear Up Default User Config**: Clear up default user's nix-config from github
-    ```bash
-    sudo rm -rf /home/nixos/nix-config
-    ```
-  
-### Daily System Updates
-
-For routine updates to your NixOS WSL2 system configuration (e.g., adding packages, changing services), you can use `--switch` for immediate application.
-
+Run the following command from the `nix-config` root to apply or update the user configuration.
 ```bash
-cd nix-config
-sudo NIX_CONFIG="experimental-features = nix-command flakes" nix run github:NixOS/nixpkgs/nixos-25.05#nixos-rebuild -- switch --flake .#nixos-wsl
+# Auto-detect architecture and apply
+NIX_CONFIG="experimental-features = nix-command flakes" nix run home-manager/master -- switch --flake .
+
+# Or specify the architecture explicitly
+# NIX_CONFIG="..." nix run home-manager/master -- switch --flake .#loss@x86_64-linux
+# NIX_CONFIG="..." nix run home-manager/master -- switch --flake .#loss@aarch64-linux
 ```
 
 ---
 
-## Quick Reference
+## 4. Shell Alias Reference
 
-### Shell Aliases (Available after Home Manager setup)
+Once the configuration is applied, the following aliases will be available:
 
 ```bash
-# Home Manager
-hms          # Switch Home Manager config (auto-detect architecture)
-hms-x86      # Switch to x86_64-linux config
-hms-arm      # Switch to aarch64-linux config
+# ========================
+#  NixOS
+# ========================
+nrs          # Update NixOS system and user environment (nixos-rebuild switch)
 
-# Maintenance
-hmg          # Show Home Manager generations
+# ========================
+#  Nix-Darwin (macOS)
+# ========================
+drs          # Update Nix-Darwin system and user environment (darwin-rebuild switch)
+
+# ========================
+#  Standalone Home Manager
+# ========================
+hms          # Update user configuration (home-manager switch)
+
+# ========================
+#  General Maintenance
+# ========================
+hmg          # List all Home Manager generations
 hmtoday      # Remove generations older than 1 day
 hmwk         # Remove generations older than 1 week
-hmu          # Update flake inputs
+hmu          # Update the flake.lock file
 ```
