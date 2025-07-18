@@ -21,16 +21,12 @@
         "nix-command"
         "flakes"
       ];
-
-      # --- Add these two settings for the mirrors ---
-      # A list of servers providing pre-built packages (binary cache).
+      # --- 只保留官方缓存，移除所有镜像站 ---
       substituters = [
-        "https://mirrors.ustc.edu.cn/nix-channels/store"
-        "https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+        "https://cache.nixos.org"
       ];
 
-      # Public keys to verify the authenticity of the binary cache.
-      # The USTC and TUNA mirrors use the same key as the official cache.
+      # 公钥用于验证二进制缓存
       trusted-public-keys = [
         "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
       ];

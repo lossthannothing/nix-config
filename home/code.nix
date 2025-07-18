@@ -1,4 +1,9 @@
-{ pkgs, dotfiles, ... }:
+{
+  pkgs,
+  dotfiles,
+  config,
+  ...
+}:
 
 {
   home.packages = with pkgs; [
@@ -83,5 +88,10 @@
   home.file = {
     "./.config/lvim/config.lua".source = "${dotfiles}/config/.config/lvim/config.lua";
     ".global.gitignore".source = "${dotfiles}/git/.global.gitignore";
+
+    # 单文件放宽- 不会锁定文件读写权限
+    ".claude/commands/spec.md" = {
+      source = config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/nix-config/dotfiles/claude/.claude/commands/spec.md";
+    };
   };
 }

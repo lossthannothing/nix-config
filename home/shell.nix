@@ -21,10 +21,8 @@
     hyperfine
     just
     neofetch
-
     # 解压工具 (支持 extract 函数)
     unzip
-    unrar
     p7zip
     xz
     cabextract
@@ -65,7 +63,7 @@
         fi
 
         # 添加本地 bin 目录到 PATH
-        export PATH="$HOME/.local/bin:$PATH"
+        # export PATH="$HOME/.local/bin:$PATH"
       '';
 
       shellAliases = {
