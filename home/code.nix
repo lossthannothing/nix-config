@@ -12,7 +12,6 @@
     uv
     fnm
     rustup
-    claude-code
     ansible
     nixfmt-rfc-style
   ];
