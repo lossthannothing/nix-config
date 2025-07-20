@@ -1,4 +1,7 @@
-# os/wsl.nix
+# modules/nixos/wsl.nix
+#
+# WSL-specific NixOS configuration
+# WSL 特定的 NixOS 配置
 
 {
   config,
@@ -60,8 +63,8 @@ in
     ];
   };
 
-  # Override the general hostname for this specific WSL instance.
-  networking.hostName = "nixos-wsl";
+  # Note: hostname is now set in hosts/nixos-wsl/default.nix
+  # networking.hostName is host-specific, not WSL-specific
 
   # Disable bootloaders, as WSL handles booting differently and they are not needed.
   boot.loader.systemd-boot.enable = false;

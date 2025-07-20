@@ -1,6 +1,18 @@
 {
   description = "A personal Nix configuration for NixOS and Home Manager.";
-
+  nixConfig = {
+    # substituers will be appended to the default substituters when fetching packages
+    extra-substituters = [
+      "https://anyrun.cachix.org"
+      # "https://nix-gaming.cachix.org"
+      # "https://nixpkgs-wayland.cachix.org"
+    ];
+    extra-trusted-public-keys = [
+      "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
+      # "nix-gaming.cachix.org-1:nbjlureqMbRAxR1gJ/f3hxemL9svXaZF/Ees8vCUUs4="
+      # "nixpkgs-wayland.cachix.org-1:3lwxaILxMRkVhehr5StQprHdEo4IrE8sRho9R9HOLYA="
+    ];
+  };
   inputs = {
     # Core package set from the unstable channel.
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -38,9 +50,7 @@
 
       # A common set of Home Manager modules to be reused across configurations.
       homeModules = [
-        ./home/home.nix
-        ./home/code.nix
-        ./home/shell.nix
+        ./home
       ];
 
       # Common special arguments passed to all modules.
@@ -83,8 +93,7 @@
           specialArgs = specialArgs;
           modules = [
             nixos-wsl.nixosModules.default
-            ./os/nixos.nix
-            ./os/wsl.nix
+            ./hosts/nixos-wsl
             home-manager.nixosModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
