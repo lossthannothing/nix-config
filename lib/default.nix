@@ -6,16 +6,11 @@
 { lib, ... }:
 
 {
-  # Import individual helper modules
-  homeManagerSystem = import ./homeManagerSystem.nix;
+  # Import helper modules
   nixosSystem = import ./nixosSystem.nix;
 
   # Common configurations and variables
   vars = import ./vars.nix;
-
-  # Utility functions
-  # use path relative to the root of the project
-  relativeToRoot = lib.path.append ../.;
 
   # Scan paths for nix files (useful for auto-importing modules)
   scanPaths =

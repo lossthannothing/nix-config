@@ -1,4 +1,4 @@
-# home/programs/development.nix
+# home/dev/dev-tools.nix
 #
 # Development tools configuration module
 # 开发工具配置模块
@@ -23,6 +23,7 @@
     rustup
     ansible
     nixfmt-rfc-style
+    devenv
   ];
 
   # Development programs

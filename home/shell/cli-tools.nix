@@ -1,4 +1,4 @@
-# home/shell/tools.nix
+# home/shell/cli-tools.nix
 #
 # Shell tools configuration module
 # Shell 工具配置模块

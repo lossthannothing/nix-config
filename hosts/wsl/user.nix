@@ -1,7 +1,7 @@
-# modules/base/users.nix
+# hosts/wsl/user.nix
 #
-# User configuration
-# 用户配置 - 跨平台通用
+# User configuration for WSL host
+# WSL 主机的用户配置
 
 {
   config,

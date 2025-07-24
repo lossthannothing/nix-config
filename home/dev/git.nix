@@ -1,4 +1,4 @@
-# home/programs/git.nix
+# home/git.nix
 #
 # Git configuration module
 # Git 配置模块

@@ -43,19 +43,6 @@
       "..." = "cd ../..";
       extr = "extract";
       extrr = "extract_and_remove";
-
-      # 现在可以使用最简化的命令了！
-      hms = "nix run home-manager/master -- switch --flake .";
-
-      # 明确指定架构的选项
-      hms-x86 = "nix run home-manager/master -- switch --flake .#loss@x86_64-linux";
-      hms-arm = "nix run home-manager/master -- switch --flake .#loss@aarch64-linux";
-
-      hmg = "nix run home-manager/master -- generations";
-      hmn = "nix run home-manager/master -- news";
-      hmtoday = "nix run home-manager/master -- expire-generations '-1 days'";
-      hmwk = "nix run home-manager/master -- expire-generations '-7 days'";
-      hmu = "nix flake update";
     };
 
     initContent =
@@ -91,6 +78,6 @@
   # ZSH-related dotfiles
   home.file = {
     ".p10k.zsh".source = "${dotfiles}/zsh/.p10k.zsh";
-    ".zshrc".source = "${dotfiles}/zsh/.zshrc";
+    # ".zshrc".source = "${dotfiles}/zsh/.zshrc";
   };
 }

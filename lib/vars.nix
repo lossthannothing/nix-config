@@ -9,8 +9,6 @@
 
   # A common set of Home Manager modules to be reused across configurations.
   homeModules = [
-    ../home/home.nix
-    ../home/code.nix
-    ../home/shell.nix
+    ../home
   ];
 }

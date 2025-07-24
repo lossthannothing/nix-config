@@ -1,4 +1,4 @@
-# modules/nixos/wsl.nix
+# os/wsl.nix
 #
 # WSL-specific NixOS configuration
 # WSL 特定的 NixOS 配置
@@ -72,9 +72,4 @@ in
 
   # --- Solution for VS Code Remote SSH on WSL: Using nix-ld ---
   programs.nix-ld.enable = true;
-
-  # 确保 cursor需要的 wget (以及其他可能的依赖) 在wsl系统包中
-  environment.systemPackages = [
-    pkgs.wget
-  ];
 }
