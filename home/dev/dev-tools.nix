@@ -24,6 +24,7 @@
     ansible
     nixfmt-rfc-style
     devenv
+    claude-code
   ];
 
   # Development programs

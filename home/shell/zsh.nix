@@ -29,7 +29,7 @@
       fi
 
       # 添加本地 bin 目录到 PATH
-      # export PATH="$HOME/.local/bin:$PATH"
+      export PATH="$HOME/.local/bin:$PATH"
     '';
 
     shellAliases = {

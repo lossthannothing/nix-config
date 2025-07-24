@@ -49,11 +49,13 @@ in
     enable = true; # 启用 NixOS-WSL 核心功能
     defaultUser = "loss"; # 设置默认用户
     wrapBinSh = true; # 启用 bash 包装器功能
+    useWindowsDriver = true;
     usbip = {
       enable = true;
       # Tell usbip to connect to the Windows host via the loopback address.
       snippetIpAddress = "127.0.0.1";
     };
+    docker-desktop.enable = true;
     # 为 Cursor 添加 bash
     extraBin = [
       {
