@@ -1,4 +1,4 @@
-# os/wsl.nix
+# os/platform-spec/wsl-distro.nix
 #
 # WSL-specific NixOS configuration
 # WSL 特定的 NixOS 配置
@@ -50,6 +50,7 @@ in
     defaultUser = "loss"; # 设置默认用户
     wrapBinSh = true; # 启用 bash 包装器功能
     useWindowsDriver = true;
+    startMenuLaunchers = true; # 在开始菜单中创建Linux gui app
     usbip = {
       enable = true;
       # Tell usbip to connect to the Windows host via the loopback address.

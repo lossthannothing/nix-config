@@ -15,7 +15,7 @@
     # Import core OS configuration (includes system-pkgs.nix via auto-scan)
     ../../os/configuration.nix
     # Import WSL-specific configuration
-    ../../os/wsl.nix
+    ../../os/spec/wsl-distro.nix
   ];
 
   # Host-specific configurations

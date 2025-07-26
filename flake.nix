@@ -71,6 +71,17 @@
           inherit specialArgs;
           myvars = vars;
         };
+        
+        "nixos-vm" = mylib.nixosSystem {
+          inherit inputs lib;
+          system = "x86_64-linux";
+          nixos-modules = [
+            ./hosts/nixos-vm
+          ];
+          home-modules = [ ./home/vm-desktop.nix ];
+          inherit specialArgs;
+          myvars = vars;
+        };
       };
     };
 }
