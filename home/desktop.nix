@@ -4,7 +4,7 @@
 # NixOS 虚拟机的桌面环境配置
 # Adapted from https://github.com/imlyzh/nixos
 
-{ config, pkgs, ... }:
+{ config, pkgs, dotfiles, ... }:
 
 let
   # Terminal and launcher configuration
@@ -144,9 +144,9 @@ in {
 
   # Configuration files
   home.file = {
-    "./.config/waybar".source = ../dotfiles/config/.config/waybar;
-    "./.config/assets".source = ../dotfiles/config/.config/assets;
-    "./.config/niri/config.kdl".source = ../dotfiles/config/.config/niri/config.kdl;
+    "./.config/waybar".source = "${dotfiles}/config/.config/waybar";
+    "./.config/assets".source = "${dotfiles}/config/.config/assets";
+    "./.config/niri/config.kdl".source = "${dotfiles}/config/.config/niri/config.kdl";
   };
 
   # Background service
