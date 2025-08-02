@@ -28,6 +28,6 @@
     wl-clipboard
   ];
 
-  # VM-specific services
-  services.spice-vdagent.enable = true;
+  # VM-specific services (spice-vdagent is system-level, not home-manager)
+  # services.spice-vdagent should be configured at system level
 }
