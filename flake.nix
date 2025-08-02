@@ -68,7 +68,12 @@
             nixos-wsl.nixosModules.default
             ./hosts/wsl
           ];
-          home-modules = [ ./home ];
+          home-modules = [ 
+            ./home/home.nix
+            ./home/shell
+            ./home/dev
+            ./home/platforms/wsl.nix
+          ];
           inherit specialArgs;
           myvars = vars;
         };
@@ -79,7 +84,13 @@
           nixos-modules = [
             ./hosts/nixos-vm
           ];
-          home-modules = [ ./home/vm-desktop.nix ];
+          home-modules = [ 
+            ./home/home.nix
+            ./home/shell
+            ./home/dev
+            ./home/desktop.nix
+            ./home/platforms/vm.nix
+          ];
           inherit specialArgs;
           myvars = vars;
         };
