@@ -9,10 +9,10 @@ let
   script = ''
     #!/usr/bin/env bash
     set -euo pipefail
-    TARGET_PATH="${1:-.}"
+    TARGET_PATH="''${1:-.}"
     CURRENT_PATH=$(readlink -f "$TARGET_PATH")
-    DISTRO_NAME="${WSL_DISTRO_NAME:-${cfg.distroName}}"
-    exec windsurf --folder-uri "vscode-remote://wsl+${DISTRO_NAME}${CURRENT_PATH}"
+    DISTRO_NAME="''${WSL_DISTRO_NAME:-${cfg.distroName}}"
+    exec windsurf --folder-uri "vscode-remote://wsl+''${DISTRO_NAME}''${CURRENT_PATH}"
   '';
 
 in {
@@ -36,7 +36,7 @@ in {
       executable = true;
     };
     programs.zsh.shellAliases = {
-      ${cfg.alias} = ''"${launcherPath} ."'';
+      "${cfg.alias}" = ''"${launcherPath} ."'';
     };
   };
 }
