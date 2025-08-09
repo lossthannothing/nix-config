@@ -8,4 +8,4 @@
 .env.private
 **/.secrets/
 .serena/memories/serena_tool_compatibility_nix.md
-.senera/
+.serena/
