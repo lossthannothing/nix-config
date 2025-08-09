@@ -64,6 +64,10 @@ in
         src = "${bashWrapper}/bin/bash";
       }
     ];
+    # 从 os/platforms/wsl.nix 合并的 wslConf 设置
+    wslConf.automount.root = "/mnt";
+    wslConf.interop.appendWindowsPath = false;
+    wslConf.network.generateHosts = false;
   };
 
   # Note: hostname is now set in hosts/nixos-wsl/default.nix
@@ -73,6 +77,18 @@ in
   boot.loader.systemd-boot.enable = false;
   boot.loader.grub.enable = false;
 
+  # 关闭在 WSL 下不需要/不可用的 systemd 服务（来自 os/platforms/wsl.nix）
+  systemd.services.systemd-resolved.enable = false;
+  systemd.services.systemd-networkd.enable = false;
+
+  # WSL 的网络配置（来自 os/platforms/wsl.nix）
+  networking = {
+    dhcpcd.enable = false;
+    useDHCP = false;
+    useNetworkd = false;
+  };
+
   # --- Solution for VS Code Remote SSH on WSL: Using nix-ld ---
   programs.nix-ld.enable = true;
 }
+

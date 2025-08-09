@@ -16,8 +16,8 @@
     ../../os/base.nix
     # Import system packages
     ../../os/system-pkgs.nix
-    # Import VM platform configuration
-    ../../os/platforms/vm.nix
+    # Import VM spec configuration (migrated)
+    ../../os/spec/vm.nix
     # Import desktop features
     ../../os/features/desktop.nix
     # Import desktop packages

@@ -25,10 +25,4 @@
   # This provides the Zsh executable; Home Manager will layer on top with dotfiles and plugins.
   programs.zsh.enable = true;
 
-  # Enable Windsurf WSL launcher for this host (Home Manager application-level feature)
-  home-manager.users.loss.windsurf.wslLauncher = {
-    enable = true;
-    alias = "wf";
-    distroName = "NixOS";
-  };
 }

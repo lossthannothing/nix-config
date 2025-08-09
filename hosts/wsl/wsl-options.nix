@@ -16,10 +16,10 @@
     ../../os/base.nix
     # Import system packages
     ../../os/system-pkgs.nix
-    # Import WSL platform configuration
-    ../../os/platforms/wsl.nix
-    # Import WSL platform packages
-    ../../os/platforms/wsl-pkgs.nix
+    # Import WSL spec configuration (migrated)
+    ../../os/spec/wsl-distro.nix
+    # Import WSL spec packages (migrated)
+    ../../os/spec/wsl-pkgs.nix
     # Import hardware configuration
     ./hardware.nix
   ];

@@ -73,7 +73,6 @@
             ./home/shell
             ./home/dev
             ./home/platforms/wsl.nix
-            ./home/apps/windsurf/wsl-compat.nix
           ];
           inherit specialArgs;
           myvars = vars;
