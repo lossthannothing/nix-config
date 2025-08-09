@@ -36,7 +36,7 @@ in {
       executable = true;
     };
     programs.zsh.shellAliases = {
-      "${cfg.alias}" = ''"${launcherPath} ."'';
+      "${cfg.alias}" = ''${launcherPath} .'';
     };
   };
 }
