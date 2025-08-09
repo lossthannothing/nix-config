@@ -19,13 +19,11 @@
   # Graphics drivers for VM
   services.xserver.videoDrivers = [
     "vmware"
-    "virtualbox"
-    "qxl"
   ];
 
   # Enable guest additions for better VM integration
   virtualisation.vmware.guest.enable = true;
-  virtualisation.virtualbox.guest.enable = true;
+  # virtualisation.virtualbox.guest.enable = true;
 
   # VM-specific optimizations
   services.qemuGuest.enable = true;
