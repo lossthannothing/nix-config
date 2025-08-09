@@ -1,12 +1,13 @@
-# Á	¯ƒØÏ‡ö - +Æ¥IOáo
+# ï¿½	ï¿½ï¿½ï¿½Ï‡ï¿½ - +Æ¥IOï¿½o
 .private_env.sh
 **/private/env
 **/.config/private/
 
-# Home Manager „Á	Mn
+# Home Manager ï¿½ï¿½	Mn
 **/.config/nix-private/
 
-# vÖïý„Á	‡ö
+# vï¿½ï¿½ï¿½ï¿½ï¿½	ï¿½ï¿½
 .env.local
 .env.private
 **/.secrets/
+.serena/memories/serena_tool_compatibility_nix.md

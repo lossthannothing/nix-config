@@ -17,7 +17,11 @@
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
   # Graphics drivers for VM
-  services.xserver.videoDrivers = [ "vmware" "virtualbox" "qxl" ];
+  services.xserver.videoDrivers = [
+    "vmware"
+    "virtualbox"
+    "qxl"
+  ];
 
   # Enable guest additions for better VM integration
   virtualisation.vmware.guest.enable = true;

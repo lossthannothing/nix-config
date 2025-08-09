@@ -1,7 +1,8 @@
 # hosts/nixos-vm/hardware.nix
 #
-# VM hardware-specific configuration
-# 虚拟机硬件特定配置
+# A module for VM-specific hardware configuration, designed to be composed
+# with a generated hardware configuration.
+# 虚拟机硬件配置模块，旨在与自动生成的硬件配置组合使用。
 
 {
   config,
@@ -11,22 +12,39 @@
 }:
 
 {
-  # VM-specific hardware configuration
+  # Define file systems based on their mount points.
+  # These definitions will be merged with the generated hardware-configuration.nix.
+  # 基于挂载点定义文件系统。这些定义将与生成的 hardware-configuration.nix 合并。
+
   fileSystems."/" = {
-    device = "/dev/disk/by-label/nixos";
-    fsType = "ext4";
+    # The device and fsType are typically provided by the generated hardware.nix.
+    # We are adding the Btrfs subvolume options here.
+    # 设备和文件系统类型通常由生成的 hardware.nix 提供。我们在此处添加 Btrfs 子卷选项。
+    options = [
+      "subvol=@root"
+      "ssd"
+      "noatime"
+      "compress=zstd:3"
+      "autodefrag"
+    ];
   };
 
-  fileSystems."/boot" = {
-    device = "/dev/disk/by-label/boot";
-    fsType = "vfat";
+  fileSystems."/home" = {
+    options = [
+      "subvol=@home"
+      "ssd"
+      "noatime"
+      "compress=zstd:3"
+      "autodefrag"
+    ];
   };
 
-  swapDevices = [ ];
-
-  # Host-specific configurations
-  networking.hostName = "nixos-vm";
-
-  # System state version
-  system.stateVersion = "24.05";
+  fileSystems."/nix" = {
+    options = [
+      "subvol=@nix"
+      "ssd"
+      "noatime"
+      "compress=zstd:3"
+    ];
+  };
 }
