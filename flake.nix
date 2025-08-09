@@ -68,7 +68,7 @@
             nixos-wsl.nixosModules.default
             ./hosts/wsl
           ];
-          home-modules = [ 
+          home-modules = [
             ./home/home.nix
             ./home/shell
             ./home/dev
@@ -77,14 +77,14 @@
           inherit specialArgs;
           myvars = vars;
         };
-        
+
         "nixos-vm" = mylib.nixosSystem {
           inherit inputs lib;
           system = "x86_64-linux";
           nixos-modules = [
             ./hosts/nixos-vm
           ];
-          home-modules = [ 
+          home-modules = [
             ./home/home.nix
             ./home/shell
             ./home/dev

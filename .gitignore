@@ -9,3 +9,8 @@
 **/.secrets/
 .serena/memories/serena_tool_compatibility_nix.md
 .serena/
+.cunzhi-memory/metadata.json
+.cunzhi-memory/rules.md
+.cunzhi-memory/context.md
+.cunzhi-memory/patterns.md
+.cunzhi-memory/preferences.md

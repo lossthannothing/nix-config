@@ -7,6 +7,7 @@
   config,
   pkgs,
   lib,
+  mylib,
   ...
 }:
 
@@ -20,9 +21,7 @@
     # Set the default shell for the user. Home Manager will provide detailed Zsh configuration.
     shell = pkgs.zsh;
   };
-
   # Enable Zsh as a system program.
   # This provides the Zsh executable; Home Manager will layer on top with dotfiles and plugins.
   programs.zsh.enable = true;
-
 }

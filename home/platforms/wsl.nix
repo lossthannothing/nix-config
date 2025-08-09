@@ -11,13 +11,16 @@
 }:
 
 {
+  # 启用 Windsurf WSL 兼容层
+  programs.windsurf.wsl-compat.enable = true;
+
   # WSL-specific user environment settings
   home.sessionVariables = {
     # Windows integration
     BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe";
     
     # WSL-specific paths
-    WSLENV = "USERPROFILE/p:APPDATA/p";
+    # WSLENV = "USERPROFILE/p:APPDATA/p";
   };
 
   # WSL-specific aliases
