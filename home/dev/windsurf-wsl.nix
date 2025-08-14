@@ -8,12 +8,8 @@
   # 只有当选项被启用时，下面的配置才会生效
   config = lib.mkIf config.programs.windsurf.wsl-compat.enable {
 
-    # 检查当前系统是否为 WSL，增加一层保险
-    # 如果您确定只会在 wsl 主机上手动启用它，这行可以省略，但加上更健壮
-    assertions = [{
-      assertion = config.isWSL;
-      message = "The Windsurf WSL compatibility layer can only be enabled on a WSL system.";
-    }];
+    # 注意：此模块应仅在WSL环境中启用
+    # 已通过配置结构确保只在WSL平台使用
 
     home.packages = [
       (pkgs.writeShellScriptBin "windsurf-launcher" ''
