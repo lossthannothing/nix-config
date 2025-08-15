@@ -67,7 +67,7 @@ in
     # 从 os/platforms/wsl.nix 合并的 wslConf 设置
     wslConf.automount.root = "/mnt";
     # interop.includePath = true;
-    wslConf.interop.appendWindowsPath = true;
+    # wslConf.interop.appendWindowsPath = true;
     # wslConf.network.generateHosts = false;
   };
 

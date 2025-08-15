@@ -25,7 +25,6 @@
     ansible
     nixfmt-rfc-style
     devenv
-    claude-code
     nix-output-monitor  # Better Nix build output visualization
   ];
 
