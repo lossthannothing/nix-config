@@ -7,5 +7,6 @@
   imports = [
     ./wsl-options.nix
     ./user.nix
+    ./wsl-tools.nix
   ];
 }

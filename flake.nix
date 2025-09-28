@@ -75,7 +75,6 @@
                 ./home/home.nix
                 ./home/shell
                 ./home/dev
-                ./home/platforms/wsl.nix
               ];
               inherit specialArgs;
               myvars = vars;

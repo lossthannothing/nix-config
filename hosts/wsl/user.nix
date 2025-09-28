@@ -24,4 +24,5 @@
   # Enable Zsh as a system program.
   # This provides the Zsh executable; Home Manager will layer on top with dotfiles and plugins.
   programs.zsh.enable = true;
+  # WSL-specific PATH entries moved to Home Manager (home.sessionPath)
 }

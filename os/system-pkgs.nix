@@ -17,6 +17,7 @@
   environment.systemPackages = with pkgs; [
     wget # A common utility, useful on most systems.
     htop # A process viewer.
+    nixd # nix language server provider
     # Add other universally needed system packages here.
   ];
 }
