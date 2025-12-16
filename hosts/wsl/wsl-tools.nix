@@ -67,6 +67,7 @@
   # Append MCPS-related paths to PATH for interactive shells (WSL-scoped via module import)
   environment.interactiveShellInit = lib.mkAfter ''
     export PATH="$PATH:/mnt/d/Workspace:/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli"
+    export PATH="$PATH:/mnt/c/Users/Lossilklauralin/AppData/Local/Programs/Microsoft VS Code/bin"
   '';
 
   # System-wide shell aliases for WSL
