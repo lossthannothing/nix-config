@@ -2,11 +2,12 @@
 #
 # WSL 主机配置 - 自注册到 flake.modules.nixos
 
-{ config, inputs, pkgs, lib, ... }:
+{ config, inputs, ... }:
 
 {
   # 自注册到 flake.modules.nixos."hosts/nixos-wsl"
   flake.modules.nixos."hosts/nixos-wsl" =
+    { pkgs, lib, ... }:
     {
       imports =
         with config.flake.modules.nixos;
@@ -26,6 +27,7 @@
                 base # 基础 Home Manager 配置
                 shell # 所有 shell 工具（自动合并所有 modules/shell/*.nix）
                 dev # 所有开发工具（自动合并所有 modules/dev/*.nix）
+                loss # 用户特定配置（从 modules/users/loss/default.nix）
               ];
             };
           }
@@ -120,8 +122,8 @@
               mcps-check = "echo 'MCPS_HOME:' $MCPS_HOME && echo 'CUNZHI_CLI:' $CUNZHI_CLI";
             };
 
-            # 系统版本
-            system.stateVersion = "24.05";
+            # 平台
+            nixpkgs.hostPlatform = "x86_64-linux";
           }
         ];
     };

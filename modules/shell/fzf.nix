@@ -1,9 +1,3 @@
-# modules/shell/fzf.nix
-#
-# fzf - 模糊查找工具
-
-{ pkgs, ... }:
-
 {
   flake.modules.homeManager.shell = {
     programs.fzf = {

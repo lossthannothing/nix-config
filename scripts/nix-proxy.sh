@@ -11,7 +11,7 @@
 
 # --- Configuration ---
 # HTTP 代理地址和端口
-HTTP_PROXY_URL="http://127.0.0.1:7897"
+HTTP_PROXY_URL="http://127.0.0.1:7890"
 
 # SOCKS5 代理地址和端口
 # 使用 socks5h:// 可以在代理端解析 DNS，通常是推荐的做法。

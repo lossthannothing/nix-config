@@ -1,8 +1,3 @@
-# modules/flake-parts/host-machines.nix
-#
-# 自动生成 nixosConfigurations 的生成器
-# 从 flake.modules.nixos 中提取所有 "hosts/*" 模块并生成对应的系统配置
-
 {
   inputs,
   lib,
@@ -20,6 +15,7 @@ in
       let
         specialArgs = {
           inherit inputs;
+          dotfiles = inputs.dotfiles;
           hostConfig = {
             name = lib.removePrefix prefix name;
           };
