@@ -2,8 +2,7 @@
 #
 # VM Desktop Home Manager configuration
 # 虚拟机桌面 Home Manager 配置
-{ ... }:
-{
+{...}: {
   imports = [
     ./home.nix
     ./dev

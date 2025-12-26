@@ -6,8 +6,7 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   # WSL-specific system packages
   environment.systemPackages = with pkgs; [
     # Windows integration tools

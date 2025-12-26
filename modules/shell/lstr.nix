@@ -3,10 +3,8 @@
 # lstr - 文件列表工具
 {
   flake.modules = {
-    homeManager.shell =
-      { pkgs, ... }:
-      {
-        home.packages = with pkgs; [ lstr ];
-      };
+    homeManager.shell = {pkgs, ...}: {
+      home.packages = with pkgs; [lstr];
+    };
   };
 }

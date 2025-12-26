@@ -3,16 +3,13 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   prefix = "hosts/";
-in
-{
+in {
   flake.nixosConfigurations = lib.pipe config.flake.modules.nixos [
     (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
     (lib.mapAttrs' (
-      name: module:
-      let
+      name: module: let
         specialArgs = {
           inherit inputs;
           inherit (inputs) dotfiles;
@@ -20,8 +17,7 @@ in
             name = lib.removePrefix prefix name;
           };
         };
-      in
-      {
+      in {
         name = lib.removePrefix prefix name;
         value = inputs.nixpkgs.lib.nixosSystem {
           inherit specialArgs;

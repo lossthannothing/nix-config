@@ -10,8 +10,7 @@
   lib,
   dotfiles,
   ...
-}:
-{
+}: {
   programs.zsh = {
     enable = true;
 
@@ -42,29 +41,28 @@
       extrr = "extract_and_remove";
     };
 
-    initContent =
-      let
-        p10kInit = lib.mkOrder 500 ''
-          if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-            source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-          fi
-          [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
-        '';
+    initContent = let
+      p10kInit = lib.mkOrder 500 ''
+        if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
+          source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
+        fi
+        [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+      '';
 
-        toolsInit = lib.mkOrder 1000 ''
-          if command -v sheldon &> /dev/null; then
-            eval "$(sheldon source)"
-          fi
-          if command -v fnm &> /dev/null; then
-            eval "$(fnm env)"
-          fi
-        '';
+      toolsInit = lib.mkOrder 1000 ''
+        if command -v sheldon &> /dev/null; then
+          eval "$(sheldon source)"
+        fi
+        if command -v fnm &> /dev/null; then
+          eval "$(fnm env)"
+        fi
+      '';
 
-        functionsInit = lib.mkOrder 1000 ''
-          # Source functions from the dotfiles submodule
-              source "${dotfiles}/zsh/.zsh/functions.zsh"
-        '';
-      in
+      functionsInit = lib.mkOrder 1000 ''
+        # Source functions from the dotfiles submodule
+            source "${dotfiles}/zsh/.zsh/functions.zsh"
+      '';
+    in
       lib.mkMerge [
         p10kInit
         toolsInit

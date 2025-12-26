@@ -4,11 +4,7 @@
 # IDE 配置模块
 #
 # This module contains IDE-specific configurations
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # IDE packages
   home.packages = with pkgs; [
     # Add IDE packages here when needed

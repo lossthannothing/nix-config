@@ -2,17 +2,13 @@
 #
 # User configuration for WSL host
 # WSL 主机的用户配置
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # Define the system user 'loss'. This username must match the one used in your
   # Home Manager configuration and the 'wsl.defaultUser' setting.
   users.users.loss = {
     isNormalUser = true;
     description = "loss";
-    extraGroups = [ "wheel" ]; # Add to 'wheel' group for sudo privileges.
+    extraGroups = ["wheel"]; # Add to 'wheel' group for sudo privileges.
     # Set the default shell for the user. Home Manager will provide detailed Zsh configuration.
     shell = pkgs.zsh;
   };

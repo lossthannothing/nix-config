@@ -9,8 +9,7 @@
   pkgs,
   dotfiles,
   ...
-}:
-{
+}: {
   # Shell tools and utilities packages
   home.packages = with pkgs; [
     # 插件管理和工具
@@ -41,7 +40,7 @@
     zoxide = {
       enable = true;
       enableZshIntegration = true;
-      options = [ "--cmd cd" ];
+      options = ["--cmd cd"];
     };
 
     fzf = {

@@ -17,8 +17,7 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   # Bootloader configuration
   boot.loader = {
     systemd-boot = {
@@ -113,7 +112,7 @@
     '';
 
     # Enable systemd-resolved for faster DNS resolution
-    services."systemd-resolved".wantedBy = [ "multi-user.target" ];
+    services."systemd-resolved".wantedBy = ["multi-user.target"];
   };
 
   # Early boot optimizations

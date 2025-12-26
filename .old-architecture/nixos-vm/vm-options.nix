@@ -2,10 +2,7 @@
 #
 # NixOS VM host configuration
 # NixOS 虚拟机主机配置
-{
-  ...
-}:
-{
+{...}: {
   imports = [
     # Import base OS configuration
     ../../os/base.nix

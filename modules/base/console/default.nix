@@ -7,16 +7,14 @@
       programs.zsh.enable = true;
     };
 
-    nixos.base =
-      { pkgs, ... }:
-      {
-        users.defaultUserShell = pkgs.zsh;
-        programs.zsh.enable = true;
+    nixos.base = {pkgs, ...}: {
+      users.defaultUserShell = pkgs.zsh;
+      programs.zsh.enable = true;
 
-        console = {
-          earlySetup = true;
-          useXkbConfig = true;
-        };
+      console = {
+        earlySetup = true;
+        useXkbConfig = true;
       };
+    };
   };
 }

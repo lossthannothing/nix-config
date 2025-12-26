@@ -1,11 +1,7 @@
 # os/spec/vm.nix
 #
 # Virtual Machine specific configuration (migrated from os/platforms/vm.nix)
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # Boot configuration for VM
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

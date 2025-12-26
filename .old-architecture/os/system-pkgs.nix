@@ -2,11 +2,7 @@
 #
 # System-level packages configuration
 # 系统级软件包配置
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # System-level packages.
   # Only include core tools necessary for the system or all users.
   # User-specific tools (like Neovim, specific shells) should typically go in Home Manager.

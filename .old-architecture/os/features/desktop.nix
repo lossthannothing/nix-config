@@ -2,11 +2,7 @@
 #
 # Desktop environment system-level configuration
 # 桌面环境系统级配置
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # Enable graphics and desktop environment support
   services.xserver.enable = true;
   services.displayManager.gdm.enable = true;

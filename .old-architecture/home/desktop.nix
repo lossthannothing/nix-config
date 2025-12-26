@@ -8,14 +8,11 @@
   pkgs,
   dotfiles,
   ...
-}:
-let
+}: let
   # Terminal and launcher configuration
-
   # Wallpaper configuration
   wallpaper-path = "${config.home.homeDirectory}/.config/assets/wallpaper.png";
-in
-{
+in {
   # Desktop packages
   home.packages = with pkgs; [
     # Fonts
@@ -75,7 +72,7 @@ in
   # Ghostty terminal
   programs.ghostty = {
     enable = true;
-    settings = { };
+    settings = {};
   };
 
   # Hyprland window manager
@@ -102,27 +99,27 @@ in
         "noblur, class:^(ulauncher)$"
         "opaque, class:^(ulauncher)$"
       ];
-      bind = [
-        "$mod, F, exec, firefox"
-        "$mod, RETURN, exec, ghostty"
-        "$mod, Q, killactive,"
-        "$mod, D, exec, ulauncher"
-      ]
-      ++ (
-        # Workspace bindings
-        builtins.concatLists (
-          builtins.genList (
-            i:
-            let
-              ws = i + 1;
-            in
-            [
-              "$mod, code:1${toString i}, workspace, ${toString ws}"
-              "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
-            ]
-          ) 9
-        )
-      );
+      bind =
+        [
+          "$mod, F, exec, firefox"
+          "$mod, RETURN, exec, ghostty"
+          "$mod, Q, killactive,"
+          "$mod, D, exec, ulauncher"
+        ]
+        ++ (
+          # Workspace bindings
+          builtins.concatLists (
+            builtins.genList (
+              i: let
+                ws = i + 1;
+              in [
+                "$mod, code:1${toString i}, workspace, ${toString ws}"
+                "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
+              ]
+            )
+            9
+          )
+        );
       binde = [
         "$mod, LEFT, resizeactive, -10 0"
         "$mod, RIGHT, resizeactive, 10 0"
@@ -169,7 +166,7 @@ in
       TimeoutStopSec = "5";
     };
     Install = {
-      WantedBy = [ "graphical-session.target" ];
+      WantedBy = ["graphical-session.target"];
     };
   };
 }

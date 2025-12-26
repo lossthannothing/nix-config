@@ -1,8 +1,7 @@
 # modules/flake-parts/fmt.nix
 #
 # Formatter 配置 - 使用 treefmt-nix
-{ inputs, ... }:
-{
+{inputs, ...}: {
   imports = [
     inputs.treefmt-nix.flakeModule
   ];
@@ -13,8 +12,7 @@
 
       programs = {
         # Nix
-        nixfmt.enable = true; # 使用 nixfmt-rfc-style
-        # alejandra.enable = true;  # 与 nixfmt 冲突，只保留一个
+        alejandra.enable = true;
         deadnix.enable = true;
         statix.enable = true;
 

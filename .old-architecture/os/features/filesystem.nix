@@ -16,10 +16,9 @@
   pkgs,
   lib,
   ...
-}:
-{
+}: {
   # Enable Btrfs support
-  boot.supportedFilesystems = [ "btrfs" ];
+  boot.supportedFilesystems = ["btrfs"];
 
   # System packages for filesystem management
   environment.systemPackages = with pkgs; [

@@ -5,11 +5,7 @@
 #
 # This module contains all Git-related configurations including
 # the main git program configuration and related dotfiles.
-{
-  dotfiles,
-  ...
-}:
-{
+{dotfiles, ...}: {
   # GitHub CLI tool
   programs.gh = {
     enable = true;

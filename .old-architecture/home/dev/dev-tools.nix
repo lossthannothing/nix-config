@@ -10,8 +10,7 @@
   pkgs,
   dotfiles,
   ...
-}:
-{
+}: {
   # Development packages
   home.packages = with pkgs; [
     neovim

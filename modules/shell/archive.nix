@@ -4,15 +4,13 @@
 # 支持 zsh extract 函数的各种格式
 {
   flake.modules = {
-    homeManager.shell =
-      { pkgs, ... }:
-      {
-        home.packages = with pkgs; [
-          unzip
-          p7zip
-          xz
-          cabextract
-        ];
-      };
+    homeManager.shell = {pkgs, ...}: {
+      home.packages = with pkgs; [
+        unzip
+        p7zip
+        xz
+        cabextract
+      ];
+    };
   };
 }

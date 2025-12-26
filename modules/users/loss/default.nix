@@ -24,7 +24,7 @@ topLevel: {
       };
 
       # 添加到 trusted-users
-      nix.settings.trusted-users = [ topLevel.config.flake.meta.users.loss.username ];
+      nix.settings.trusted-users = [topLevel.config.flake.meta.users.loss.username];
     };
 
     # Home Manager 层用户配置

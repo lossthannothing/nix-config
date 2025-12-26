@@ -2,11 +2,7 @@
 #
 # Desktop environment system packages
 # 桌面环境系统包
-{
-  pkgs,
-  ...
-}:
-{
+{pkgs, ...}: {
   # Desktop-related system packages
   environment.systemPackages = with pkgs; [
     # Display and graphics

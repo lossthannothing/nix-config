@@ -2,10 +2,7 @@
 #
 # WSL host configuration
 # WSL 主机配置
-{
-  ...
-}:
-{
+{...}: {
   imports = [
     # Import base OS configuration
     ../../os/base.nix

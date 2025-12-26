@@ -1,8 +1,7 @@
 # modules/flake-parts/flake.nix
 #
 # Flake 元数据定义
-{ lib, ... }:
-{
+{lib, ...}: {
   options.flake.meta = lib.mkOption {
     type = with lib.types; lazyAttrsOf anything;
     description = "Flake metadata including user information";
