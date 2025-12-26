@@ -19,6 +19,7 @@
 
         # 2. NixOS 模块
         base # 基础配置（从 modules/base/default.nix）
+        rust # Rust overlay 注入（从 modules/dev/languages/rust.nix）
         loss # 用户配置（从 modules/users/loss.nix）
       ]
       # 3. Home Manager 配置（直接内联）

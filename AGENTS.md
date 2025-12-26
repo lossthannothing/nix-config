@@ -1,398 +1,273 @@
+# AGENTS.md
 
-好的，我们来做一个最终的 **架构蓝图 (Blueprint)** 总结。
+本文件为 AI 编程助手提供项目上下文和指导。
 
-这套方案完全复刻了你想要的 `drupol/infra` 模式，结合了 **文章中的 `loadNixosAndHmModuleForUser` 组装逻辑** 和 **`flake-parts` 的自动生成能力**。
+## 项目概述
 
-这是你重构 `nix-config` 的终极指南：
+这是一个基于 [drupol/infra](https://github.com/drupol/infra) 模式的 NixOS + Home Manager 配置仓库，采用 flake-parts 和模块化架构。
 
-### 核心理念
+**核心理念**：
+- 去中心化：`flake.nix` 只提供机制，不硬编码主机列表
+- 分布式注册：每台主机在自己的文件中自注册到 `flake.modules`
+- 同位加载：系统层和用户层配置统一管理
 
-1. **去中心化**：`flake.nix` 不知道有哪些机器，它只负责提供“机制”。
-2. **分布式注册**：每台机器在自己的文件里（`hosts/xxx.nix`）把自己注册到 `flake.modules` 表里。
-3. **同位加载**：使用 `load...` 函数，只写一个名字（如 `"dev"`），自动把系统层和用户层的配置都抓进来。
-
----
-
-### 第一步：`flake.nix` (机制与工具库)
-
-这是整个系统的大脑。它负责：
-
-1. 引入 `import-tree` 来扫描所有文件。
-2. 引入 `host-machines.nix` 来生成系统。
-3. **定义那把万能钥匙：`loadNixosAndHmModuleForUser**`。
-
-```nix
-{
-  description = "My Modular Infrastructure";
-
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    import-tree.url = "github:vic/import-tree";
-    
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nixos-wsl.url = "github:nix-community/NixOS-WSL";
-    
-    # ... 其他 inputs ...
-  };
-
-  outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } ({ config, lib, ... }: {
-      systems = [ "x86_64-linux" ];
-
-      imports = [
-        # 1. 开启 Modules 功能
-        inputs.flake-parts.flakeModules.modules
-
-        # 2. 导入生成器 (必须存在于 modules/flake-parts/ 下)
-        ./modules/flake-parts/host-machines.nix
-
-        # 3. 扫描积木和主机文件
-        (inputs.import-tree ./modules)
-        (inputs.import-tree ./hosts) # 允许把 hosts 放在根目录
-      ];
-
-      # 4. 定义万能组装函数 (复刻自文章)
-      flake.lib.loadNixosAndHmModuleForUser = config: modules: username:
-        {
-          imports = 
-            # A. 加载列表里的 NixOS 模块
-            (builtins.map (module: config.flake.modules.nixos.${module} or {}) modules) 
-            ++
-            [
-              {
-                # B. 自动集成 Home Manager
-                imports = [ inputs.home-manager.nixosModules.home-manager ];
-                
-                home-manager.useGlobalPkgs = true;
-                home-manager.useUserPackages = true;
-                
-                home-manager.users.${username} = {
-                  imports = [
-                    # 自动同步 stateVersion
-                    ({ osConfig, ... }: { home.stateVersion = osConfig.system.stateVersion; })
-                  ] 
-                  # C. 加载列表里的 Home Manager 模块
-                  ++ (builtins.map (module: config.flake.modules.homeManager.${module} or {}) modules);
-                };
-              }
-            ];
-        };
-        
-      # flake.nix 到此结束，不需要写任何 nixosConfigurations！
-    });
-}
+## 项目结构
 
 ```
-
----
-
-### 第二步：`modules/flake-parts/host-machines.nix` (生成器)
-
-这个文件负责在后台默默干活，把注册表里的数据变成可构建的系统。你需要直接复制 `drupol` 的逻辑。
-
-```nix
-{ inputs, lib, config, ... }:
-let
-  # 约定：只有以 "hosts/" 开头的模块才会被识别为机器
-  prefix = "hosts/";
-in
-{
-  flake.nixosConfigurations = lib.pipe config.flake.modules.nixos [
-    # 1. 过滤
-    (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
-    
-    # 2. 生成
-    (lib.mapAttrs' (name: module:
-      let
-        hostname = lib.removePrefix prefix name;
-      in
-      {
-        name = hostname;
-        value = inputs.nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux"; # 默认架构
-          specialArgs = { inherit inputs; };
-          modules = [
-            module
-            { networking.hostName = hostname; }
-          ];
-        };
-      }
-    ))
-  ];
-}
-
+nix-config/
+├── flake.nix                 # Flake 入口，定义 inputs 和基础配置
+├── flake.lock                # 依赖锁定文件
+├── apply_ref.sh              # 参考部署脚本（支持多平台）
+├── scripts/                  # 工具脚本
+├── modules/                  # 功能模块（自动扫描）
+│   ├── base/                 # 基础配置（系统 + 用户）
+│   ├── dev/                  # 开发工具配置
+│   │   └── languages/        # 语言工具链（Rust, Nix 等）
+│   ├── shell/                # Shell 配置（Zsh, Bash 等）
+│   ├── desktop/              # 桌面环境配置
+│   ├── users/                # 用户特定配置
+│   └── flake-parts/          # Flake-parts 生成器
+│       ├── host-machines.nix # 自动生成 nixosConfigurations
+│       └── nixpkgs.nix       # Nixpkgs 配置
+└── hosts/                    # 主机定义（自动扫描）
+    └── nixos-wsl/            # WSL 主机配置
+        └── default.nix       # 主机定义，自注册到 flake.modules
 ```
 
----
+### 模块架构说明
 
-### 第三步：`modules/dev.nix` (积木/同位模块)
+**模块类型**：
+- `flake.modules.nixos.*` - NixOS 系统层配置
+- `flake.modules.homeManager.*` - Home Manager 用户层配置
+- 同一功能（如 `dev`）可在一个文件中同时定义两层配置
 
-这是定义“能力”的地方。一个文件，两套配置。
+**自动扫描机制**：
+- 通过 `import-tree` 自动扫描 `modules/` 和 `hosts/` 目录
+- 所有 `.nix` 文件会自动注册到 `flake.modules` 表
+- 主机文件通过 `flake.modules.nixos."hosts/<name>"` 自注册
+
+## 开发环境
+
+### 前置要求
+
+- Nix 2.19+ with flakes enabled
+- Git
+- （WSL）NixOS-WSL 或 NixOS 系统
+
+### 常用命令
+
+```bash
+# 检查 Flake 配置
+nix flake check
+
+# 更新依赖
+nix flake update
+
+# 格式化代码
+nix fmt
+
+# 查看可用系统
+nix flake show
+
+# 部署到当前系统（WSL）
+sudo nixos-rebuild switch --flake .#nixos-wsl
+
+# 部署 Home Manager（仅用户配置）
+home-manager switch --flake .#loss@nixos-wsl
+
+# 测试构建（不激活）
+nixos-rebuild build --flake .#nixos-wsl
+```
+
+### 使用参考脚本部署
+
+```bash
+# 交互式选择部署选项
+./apply_ref.sh
+```
+
+## 代码风格
+
+### Nix 代码规范
+
+- 使用 `alejandra` 或项目配置的 formatter 格式化代码
+- 变量命名：camelCase（函数）、kebab-case（包名）
+- 模块定义：明确 `imports`、`options`、`config` 顺序
+- 注释：使用 `#` 单行注释，在复杂逻辑前添加说明
+
+### 文件组织
+
+- **一个文件一个职责**：每个模块文件专注单一功能
+- **避免循环依赖**：使用 `specialArgs` 或 `config.flake.modules` 引用
+- **平台特定配置**：放在 `hosts/` 下，不要混入 `modules/`
+- **同位配置优先**：同一功能的系统层和用户层配置放在同一文件
+
+### 示例：创建新模块
 
 ```nix
+# modules/example/default.nix
 {
   flake.modules = {
-    # 1. 系统层能力
-    nixos.dev = { pkgs, ... }: {
-      environment.systemPackages = [ pkgs.git pkgs.vim ];
-      services.gnome.gnome-keyring.enable = true;
+    # 系统层配置
+    nixos.example = { pkgs, ... }: {
+      environment.systemPackages = [ pkgs.example-package ];
+      services.example.enable = true;
     };
 
-    # 2. 用户层能力
-    homeManager.dev = { pkgs, ... }: {
-      programs.vscode.enable = true;
-      programs.direnv.enable = true;
-    };
-  };
-}
-
-```
-
----
-
-### 第四步：`hosts/wsl/default.nix` (主机定义)
-
-这是定义“机器”的地方。它利用万能钥匙，一行代码组装所有能力。
-
-```nix
-{ config, inputs, ... }: 
-{
-  # 注册自己！
-  flake.modules.nixos."hosts/nixos-wsl" = {
-    imports = [
-      # 1. 平台基底 (Platform Spec) - WSL 特有的东西
-      inputs.nixos-wsl.nixosModules.default
-      {
-        wsl.enable = true;
-        wsl.defaultUser = "loss";
-        system.stateVersion = "24.05";
-        
-        # 你的复杂 WSL 脚本 (bashWrapper 等) 可以直接写在这里，或再 import ./wsl-distro.nix
-      }
-
-      # 2. 组装功能 (The Magic)
-      # 只要写名字，自动去 modules/ 目录抓对应的 nixos.* 和 homeManager.*
-      (config.flake.lib.loadNixosAndHmModuleForUser config [
-        "base"
-        "dev"    # <--- 同时加载 nixos.dev 和 homeManager.dev
-        "shell"
-      ] "loss")
-    ];
-  };
-}
-
-```
-
----
-
-### 总结 Checklist
-
-当你开始动手时，按这个顺序做：
-
-1. [ ] **整理 Modules**: 把你的配置拆解到 `modules/xxx.nix`，确保遵循 `flake.modules = { nixos.xxx = ...; homeManager.xxx = ...; }` 的格式。
-2. [ ] **放置 Generator**: 确保 `modules/flake-parts/host-machines.nix` 存在且代码正确。
-3. [ ] **重写 Flake.nix**: 填入上面的代码，定义好 `loadNixosAndHmModuleForUser`。
-4. [ ] **定义 Host**: 创建 `hosts/wsl/default.nix`，使用 `load...` 函数进行组装。
-5. [ ] **清理**: 删掉旧的 `lib/nixosSystem.nix` 和旧的 `flake.nix` 逻辑。
-6. [ ] 以上与实际有出入，请参考git https://github.com/drupol/infra 和文章https://not-a-number.io/2025/refactoring-my-infrastructure-as-code-configurations/#trade-offs
-
-
-这套方案复刻了 `drupol/infra` 的核心架构，结合了你想要的“同位配置”（Co-location）和“自动化组装”能力。
-
----
-
-### 1. 核心目录结构 (Blueprint)
-
-你的仓库应该长这样：
-
-```text
-.
-├── flake.nix                       # [入口] 极简，只负责引入工具和定义组装函数
-├── flake.lock
-├── modules/
-│   ├── flake-parts/                # [引擎] 存放架构逻辑
-│   │   ├── host-machines.nix       # [核心] 自动生成系统配置的生成器
-│   │   └── nixpkgs.nix             # [可选] 统一管理 pkgs 配置
-│   └── dev.nix                     # [积木] 同时包含 NixOS 和 HM 的功能模块
-├── hosts/
-│   └── wsl/                        # [主机]
-│       ├── default.nix             # [定义] 注册主机，组装积木
-│       └── facter.json             # [硬件] 自动生成的驱动报告
-└── pkgs/                           # [软件] 自定义包 (配合 pkgs-by-name)
-
-```
-
----
-
-### 2. 关键文件清单 (按顺序实现)
-
-#### 第一步：核心生成器 `modules/flake-parts/host-machines.nix`
-
-**作用**：在后台默默扫描注册表，把数据变成系统。
-**来源**：复制自 `drupol/infra`。
-
-```nix
-{ inputs, lib, config, ... }:
-let
-  prefix = "hosts/";
-in
-{
-  flake.nixosConfigurations = lib.pipe config.flake.modules.nixos [
-    (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
-    (lib.mapAttrs' (name: module:
-      let
-        hostname = lib.removePrefix prefix name;
-      in
-      {
-        name = hostname;
-        value = inputs.nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
-          modules = [
-            module
-            inputs.home-manager.nixosModules.home-manager
-            {
-              networking.hostName = hostname;
-              # 自动注入参数给 HM
-              home-manager.useGlobalPkgs = true;
-              home-manager.useUserPackages = true;
-              home-manager.extraSpecialArgs = { inherit inputs; };
-            }
-          ];
-        };
-      }
-    ))
-  ];
-}
-
-```
-
-#### 第二步：总控入口 `flake.nix`
-
-**作用**：引入工具，定义万能组装函数 `loadNixosAndHmModuleForUser`。
-
-```nix
-{
-  description = "My Modular Nix Config";
-
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    flake-parts.url = "github:hercules-ci/flake-parts";
-    import-tree.url = "github:vic/import-tree";
-    nixos-wsl.url = "github:nix-community/NixOS-WSL";
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    # ... 其他 inputs
-  };
-
-  outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } ({ config, ... }: {
-      systems = [ "x86_64-linux" ];
-
-      imports = [
-        inputs.flake-parts.flakeModules.modules  # 1. 开启 Modules 功能
-        ./modules/flake-parts/host-machines.nix  # 2. 载入生成器
-        (inputs.import-tree ./modules)           # 3. 扫描积木
-        (inputs.import-tree ./hosts)             # 4. 扫描主机
-      ];
-
-      # 5. 定义万能组装函数 (The Magic Function)，可以放在modules/flake-parts下做host-machines.nix，因为此功能依赖flake-parts
-      flake.lib.loadNixosAndHmModuleForUser = config: modules: username:
-        {
-          imports = 
-            # 加载 NixOS 部分
-            (builtins.map (module: config.flake.modules.nixos.${module} or {}) modules) 
-            ++
-            [
-              {
-                # 加载 Home Manager 部分
-                home-manager.users.${username} = {
-                  imports = 
-                    (builtins.map (module: config.flake.modules.homeManager.${module} or {}) modules)
-                    ++ [ ({ osConfig, ... }: { home.stateVersion = osConfig.system.stateVersion; }) ];
-                };
-              }
-            ];
-        };
-    });
-}
-
-```
-
-#### 第三步：积木模块 `modules/dev.nix` 留有细化余地，写法方便后续模块化如dev/ide/vscode
-
-**作用**：定义能力。
-
-```nix
-{
-  flake.modules = {
-    # 系统层
-    nixos.dev = { pkgs, ... }: {
-      environment.systemPackages = [ pkgs.git ];
-    };
-    # 用户层
-    homeManager.dev = { pkgs, ... }: {
-      programs.vscode.enable = true;
+    # 用户层配置
+    homeManager.example = { pkgs, ... }: {
+      programs.example.enable = true;
+      home.packages = [ pkgs.example-tool ];
     };
   };
 }
-
 ```
 
-#### 第四步：主机定义 `hosts/wsl/default.nix`
+## 测试指南
 
-**作用**：组装机器，处理硬件。
+### 本地测试
+
+```bash
+# 1. 检查 Flake 语法和评估
+nix flake check
+
+# 2. 构建测试（不激活）
+nixos-rebuild build --flake .#nixos-wsl
+
+# 3. 检查配置差异
+nixos-rebuild dry-run --flake .#nixos-wsl
+
+# 4. 测试特定模块（使用 nix repl）
+nix repl
+:lf .
+:p outputs.nixosConfigurations.nixos-wsl.config.environment.systemPackages
+```
+
+### CI/CD
+
+暂无自动化 CI/CD 流程。建议添加：
+- GitHub Actions 运行 `nix flake check`
+- 定期更新依赖的 workflow
+
+## Git 工作流
+
+### 分支策略
+
+- `master` - 主分支，稳定配置
+- `refactor/*` - 重构分支
+- `feature/*` - 功能分支
+
+### 提交规范
+
+使用 Conventional Commits：
+
+```
+feat: 添加 Rust 开发环境配置
+fix: 修复 WSL 路径问题
+refactor: 重构为 drupol/infra 模式
+docs: 更新 README 说明
+chore: 更新 flake inputs
+```
+
+### PR 检查清单
+
+- [ ] 运行 `nix flake check` 无错误
+- [ ] 代码已格式化（`nix fmt`）
+- [ ] 测试配置可正常构建
+- [ ] 更新相关文档（README, AGENTS.md）
+- [ ] 提交信息符合规范
+
+## 安全与权限
+
+### 允许的自动操作
+
+- 读取项目文件
+- 运行 `nix flake check`、`nix fmt`
+- 创建或修改 `modules/` 下的模块文件
+- 更新文档（README.md, AGENTS.md）
+
+### 需要确认的操作
+
+- 修改 `flake.nix` 或 `flake.lock`
+- 添加新的 inputs 依赖
+- 修改 `hosts/` 下的主机配置
+- 执行 `nixos-rebuild switch` 部署
+- 删除文件或模块
+- 运行任何可能影响系统的命令
+
+### 禁止的操作
+
+- 自动提交代码或推送到远程仓库
+- 执行不可逆的系统更改
+- 泄露敏感信息（私钥、密码等）
+
+## 架构参考
+
+本项目架构参考：
+- [drupol/infra](https://github.com/drupol/infra) - 核心模式
+- [Refactoring my infrastructure-as-code configurations](https://not-a-number.io/2025/refactoring-my-infrastructure-as-code-configurations/) - 设计理念
+
+### 关键技术栈
+
+- **Nix Flakes** - 可重复构建
+- **flake-parts** - 模块化 Flake 管理
+- **import-tree** - 自动扫描目录
+- **Home Manager** - 用户环境管理
+- **NixOS-WSL** - WSL 集成
+- **rust-overlay** - Rust 工具链
+- **treefmt-nix** - 代码格式化
+
+## 常见任务
+
+### 添加新软件包
 
 ```nix
-{ config, inputs, ... }: 
-{
-  # 注册自己 -> 这会生成 nixosConfigurations.nixos-wsl
-  flake.modules.nixos."hosts/nixos-wsl" = {
-    imports = [
-      # 1. 平台基底 (Platform Spec)
-      inputs.nixos-wsl.nixosModules.default
-      {
-        wsl.enable = true;
-        wsl.defaultUser = "loss";
-        system.stateVersion = "24.05";
-      }
+# 系统级：编辑 modules/base/system/default.nix
+environment.systemPackages = with pkgs; [
+  # 添加你的包
+  new-package
+];
 
-      # 2. 硬件配置 (Hardware)
-      # 驱动自动探测 (需先运行 nixos-facter)
-      # facter.reportPath = ./facter.json; 
-      # 分区手动指定 (抄自旧 hardware-configuration.nix)
-      # fileSystems."/" = { ... };
-
-      # 3. 功能组装 (Features)
-      # 自动同时抓取 nixos.* 和 homeManager.*
-      (config.flake.lib.loadNixosAndHmModuleForUser config [
-        "base"
-        "dev" 
-        "shell"
-      ] "loss")
-    ];
-  };
-}
-
+# 用户级：编辑 modules/base/home/default.nix
+home.packages = with pkgs; [
+  new-package
+];
 ```
 
----
+### 添加新模块
 
-### 3. 迁移执行流 (Checklist)
+1. 创建 `modules/category/default.nix`
+2. 定义 `flake.modules.nixos.*` 和/或 `flake.modules.homeManager.*`
+3. 在主机配置中引用该模块
+4. 运行 `nix flake check` 验证
 
-1. **准备环境**：把 `modules/flake-parts/host-machines.nix` 放好。
-2. **写 `flake.nix**`：填入上面的代码。
-3. **拆分 Modules**：把你现在的 `home/` 和 `os/` 下的配置，拆解成同位模块放入 `modules/`。
-4. **定义 Host**：创建 `hosts/wsl/default.nix`，把 `wsl-distro.nix` 的内容（wrapBinSh 等）和 `load...` 函数写进去。
-5. **处理硬件**：
-* **WSL**：不需要 `facter` 和 `fileSystems`，只要 `nixos-wsl` 模块。
-* **物理机**：运行 `nixos-facter` 生成 JSON，并手动复制 `fileSystems` 配置到 Host 文件。
+### 添加新主机
 
+1. 创建 `hosts/hostname/default.nix`
+2. 自注册：`flake.modules.nixos."hosts/hostname" = { ... };`
+3. 导入所需模块
+4. 配置平台特定设置（hardware, services 等）
 
-6. **构建**：`nixos-rebuild switch --flake .#nixos-wsl`。
+## 疑难解答
+
+### 常见问题
+
+**问题：Flake evaluation failed**
+- 检查语法错误：`nix flake check`
+- 查看详细错误：`nix eval .#nixosConfigurations.nixos-wsl --show-trace`
+
+**问题：模块未被识别**
+- 确认文件在 `modules/` 或 `hosts/` 下
+- 检查文件是否返回有效的 attrset
+- 验证 `import-tree` 是否正确导入
+
+**问题：循环依赖**
+- 避免模块间直接 import
+- 使用 `config.flake.modules.*` 引用其他模块
+
+## 更多信息
+
+- 项目 README：查看 `README.md`
+- NixOS 手册：https://nixos.org/manual/nixos/stable/
+- Home Manager 手册：https://nix-community.github.io/home-manager/
+- Flake-parts 文档：https://flake.parts/

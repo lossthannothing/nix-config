@@ -3,7 +3,7 @@
 # 系统版本配置
 {
   flake.modules = let
-    stateVersion = "24.05";
+    stateVersion = "25.11";
   in {
     homeManager.base = {
       home = {
