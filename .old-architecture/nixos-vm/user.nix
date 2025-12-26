@@ -2,22 +2,18 @@
 #
 # User configuration for NixOS VM host
 # NixOS 虚拟机主机的用户配置
-
 {
-  config,
   pkgs,
-  lib,
   ...
 }:
-
 {
   # Define the system user 'loss'. This username must match the one used in your
   # Home Manager configuration.
   users.users.loss = {
     isNormalUser = true;
     description = "loss";
-    extraGroups = [ 
-      "wheel"        # sudo privileges
+    extraGroups = [
+      "wheel" # sudo privileges
       "networkmanager"
       "audio"
       "video"

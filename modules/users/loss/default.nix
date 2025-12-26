@@ -1,9 +1,7 @@
 # modules/users/loss/default.nix
 #
 # 用户 loss 的配置
-
-topLevel@{ ... }:
-{
+topLevel: {
   flake = {
     # 用户元数据
     meta.users.loss = {
@@ -13,7 +11,7 @@ topLevel@{ ... }:
     };
 
     # NixOS 系统层用户配置
-    modules.nixos.loss = { pkgs, ... }: {
+    modules.nixos.loss = _: {
       users.users.loss = {
         description = topLevel.config.flake.meta.users.loss.name;
         isNormalUser = true;

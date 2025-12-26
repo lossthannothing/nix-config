@@ -1,7 +1,6 @@
 # modules/flake-parts/flake.nix
 #
 # Flake 元数据定义
-
 { lib, ... }:
 {
   options.flake.meta = lib.mkOption {

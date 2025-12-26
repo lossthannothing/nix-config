@@ -2,14 +2,10 @@
 #
 # System-level packages configuration
 # 系统级软件包配置
-
 {
-  config,
   pkgs,
-  lib,
   ...
 }:
-
 {
   # System-level packages.
   # Only include core tools necessary for the system or all users.

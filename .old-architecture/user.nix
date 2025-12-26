@@ -2,15 +2,10 @@
 #
 # User configuration for WSL host
 # WSL 主机的用户配置
-
 {
-  config,
   pkgs,
-  lib,
-  mylib,
   ...
 }:
-
 {
   # Define the system user 'loss'. This username must match the one used in your
   # Home Manager configuration and the 'wsl.defaultUser' setting.

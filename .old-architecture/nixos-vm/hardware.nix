@@ -3,15 +3,7 @@
 # A module for VM-specific hardware configuration, designed to be composed
 # with a generated hardware configuration.
 # 虚拟机硬件配置模块，旨在与自动生成的硬件配置组合使用。
-
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
-
-{
+_: {
   # Define file systems based on their mount points.
   # These definitions will be merged with the generated hardware-configuration.nix.
   # 基于挂载点定义文件系统。这些定义将与生成的 hardware-configuration.nix 合并。

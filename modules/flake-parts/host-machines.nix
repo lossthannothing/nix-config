@@ -15,7 +15,7 @@ in
       let
         specialArgs = {
           inherit inputs;
-          dotfiles = inputs.dotfiles;
+          inherit (inputs) dotfiles;
           hostConfig = {
             name = lib.removePrefix prefix name;
           };

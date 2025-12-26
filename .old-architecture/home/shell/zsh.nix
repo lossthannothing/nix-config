@@ -5,15 +5,12 @@
 #
 # This module contains all ZSH-related configurations including
 # shell settings, aliases, initialization scripts and related dotfiles.
-
 {
   config,
-  pkgs,
   lib,
   dotfiles,
   ...
 }:
-
 {
   programs.zsh = {
     enable = true;

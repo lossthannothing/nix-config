@@ -2,9 +2,7 @@
 #
 # Helper functions library to reduce code duplication in flake.nix
 # 辅助函数库，用于减少 flake.nix 中的代码重复并提高可维护性
-
 { lib, ... }:
-
 {
   # Import helper modules
   nixosSystem = import ./nixosSystem.nix;

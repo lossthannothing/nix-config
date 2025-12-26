@@ -2,14 +2,11 @@
 #
 # WSL-specific tools and integrations
 # WSL 特定工具和集成
-
 {
-  config,
   pkgs,
   lib,
   ...
 }:
-
 {
   # WSL-specific system packages
   environment.systemPackages = with pkgs; [

@@ -2,10 +2,7 @@
 #
 # Basic Home Manager configuration
 # 基础 Home Manager 配置
-
-{ config, pkgs, ... }:
-
-{
+_: {
   # Basic home configuration
   home = {
     username = "loss";

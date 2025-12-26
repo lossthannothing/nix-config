@@ -2,15 +2,9 @@
 #
 # NixOS core configuration - Base entry for all NixOS systems
 # NixOS 核心配置 - 所有 NixOS 系统的基础入口
-
 {
-  config,
-  pkgs,
-  lib,
-  mylib,
   ...
 }:
-
 {
   imports = [
     # Core system modules (explicit import to avoid platform conflicts)

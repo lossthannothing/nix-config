@@ -5,14 +5,12 @@
 #
 # This module contains all development-related packages and programs
 # including editors, language tools, and development utilities.
-
 {
   config,
   pkgs,
   dotfiles,
   ...
 }:
-
 {
   # Development packages
   home.packages = with pkgs; [
@@ -25,7 +23,7 @@
     ansible
     nixfmt-rfc-style
     devenv
-    nix-output-monitor  # Better Nix build output visualization
+    nix-output-monitor # Better Nix build output visualization
   ];
 
   # Development programs

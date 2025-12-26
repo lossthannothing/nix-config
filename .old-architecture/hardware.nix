@@ -2,15 +2,7 @@
 #
 # WSL hardware-specific configuration
 # WSL 硬件特定配置
-
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
-
-{
+_: {
   # Host-specific configurations
   networking.hostName = "nixos-wsl";
 

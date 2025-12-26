@@ -5,15 +5,11 @@
 #
 # This module contains all shell-related tools and utilities
 # including packages, programs and their configurations.
-
 {
-  config,
   pkgs,
-  lib,
   dotfiles,
   ...
 }:
-
 {
   # Shell tools and utilities packages
   home.packages = with pkgs; [
@@ -35,7 +31,7 @@
     xz
     cabextract
 
-    (nerd-fonts.jetbrains-mono)
+    nerd-fonts.jetbrains-mono
   ];
 
   # Shell-related programs

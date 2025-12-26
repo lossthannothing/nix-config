@@ -1,7 +1,6 @@
 # modules/base/system/default.nix
 #
 # 系统版本配置
-
 {
   flake.modules =
     let

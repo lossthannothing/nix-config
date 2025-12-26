@@ -3,18 +3,19 @@
 # Desktop environment configuration for NixOS VM
 # NixOS 虚拟机的桌面环境配置
 # Adapted from https://github.com/imlyzh/nixos
-
-{ config, pkgs, dotfiles, ... }:
-
+{
+  config,
+  pkgs,
+  dotfiles,
+  ...
+}:
 let
   # Terminal and launcher configuration
-  my-terminal = "kitty";
-  my-launcher = "fuzzel";
 
   # Wallpaper configuration
   wallpaper-path = "${config.home.homeDirectory}/.config/assets/wallpaper.png";
-  wallpaper-cmd = "${pkgs.swaybg}/bin/swaybg -i ${wallpaper-path}";
-in {
+in
+{
   # Desktop packages
   home.packages = with pkgs; [
     # Fonts
@@ -25,35 +26,35 @@ in {
     swayfx
     niri
     xwayland-satellite
-    
+
     # Terminals
     kitty
     ghostty
-    
+
     # Launchers and UI
     ulauncher
     bibata-cursors
     fuzzel
     waybar
     mako
-    
+
     # System tools
     swaylock
     swayidle
     polkit
     swaybg
-    
+
     # Screenshot and clipboard
     grim
     slurp
     wl-clipboard
-    
+
     # Audio control
     pavucontrol
-    
+
     # Input method
     ibus
-    
+
     # Applications
     firefox
     file-roller
@@ -74,7 +75,7 @@ in {
   # Ghostty terminal
   programs.ghostty = {
     enable = true;
-    settings = {};
+    settings = { };
   };
 
   # Hyprland window manager
@@ -106,15 +107,21 @@ in {
         "$mod, RETURN, exec, ghostty"
         "$mod, Q, killactive,"
         "$mod, D, exec, ulauncher"
-      ] ++ (
+      ]
+      ++ (
         # Workspace bindings
-        builtins.concatLists (builtins.genList (i:
-          let ws = i + 1;
-          in [
-            "$mod, code:1${toString i}, workspace, ${toString ws}"
-            "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
-          ]
-        ) 9)
+        builtins.concatLists (
+          builtins.genList (
+            i:
+            let
+              ws = i + 1;
+            in
+            [
+              "$mod, code:1${toString i}, workspace, ${toString ws}"
+              "$mod SHIFT, code:1${toString i}, movetoworkspace, ${toString ws}"
+            ]
+          ) 9
+        )
       );
       binde = [
         "$mod, LEFT, resizeactive, -10 0"

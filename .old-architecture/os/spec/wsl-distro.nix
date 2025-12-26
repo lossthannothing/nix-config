@@ -2,44 +2,7 @@
 #
 # WSL-specific NixOS configuration
 # WSL 特定的 NixOS 配置
-
-{
-  config,
-  pkgs,
-  lib,
-  ...
-}:
-
-let
-  # Meskill 提供的 bashWrapper 方案 用于处理cursor
-  bashWrapper =
-    with pkgs;
-    runCommand "nixos-wsl-bash-wrapper"
-      {
-        nativeBuildInputs = [ makeWrapper ];
-      }
-      ''
-        makeWrapper ${bashInteractive}/bin/bash $out/bin/bash \
-          --prefix PATH ':' ${
-            lib.makeBinPath ([
-              systemd
-              gnugrep
-              coreutils
-              gnutar
-              gzip
-              getconf
-              gnused
-              procps
-              which
-              gawk
-              wget
-              curl
-              util-linux
-            ])
-          }
-      '';
-in
-{
+_: {
   # --------------------------------------------------------------------
   # WSL-Specific System Configuration
   # --------------------------------------------------------------------
@@ -90,6 +53,4 @@ in
 
   # --- Solution for VS Code Remote SSH on WSL: Using nix-ld ---
   programs.nix-ld.enable = true;
-
 }
-

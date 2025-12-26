@@ -2,16 +2,7 @@
 #
 # Base NixOS configuration - Common settings for all platforms
 # 基础 NixOS 配置 - 所有平台的通用设置
-
-{
-  config,
-  pkgs,
-  lib,
-  mylib,
-  ...
-}:
-
-{
+_: {
   # Enable Nix Flakes features
   nix = {
     settings = {
@@ -49,6 +40,4 @@
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-
-
 }

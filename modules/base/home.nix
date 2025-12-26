@@ -1,7 +1,6 @@
 # modules/base/home.nix
 #
 # Home Manager 基础配置
-
 {
   flake.modules.homeManager.base = {
     programs.home-manager.enable = true;

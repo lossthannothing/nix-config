@@ -22,7 +22,6 @@ SOCKS_PROXY_URL="socks5h://127.0.0.1:10808"
 OVERRIDE_DIR="/run/systemd/system/nix-daemon.service.d"
 OVERRIDE_FILE="$OVERRIDE_DIR/override.conf"
 
-
 # --- Script Logic ---
 
 # 1. 检查是否以 root 身份运行，如果不是，则用 sudo 重新运行脚本
@@ -45,7 +44,7 @@ apply_proxy() {
 
   # 使用 cat 和 heredoc 写入配置文件，安全且清晰
   # 为确保最大兼容性，同时设置大写和小写环境变量
-  cat << EOF > "$OVERRIDE_FILE"
+  cat <<EOF >"$OVERRIDE_FILE"
 [Service]
 Environment="HTTPS_PROXY=$proxy_url" "HTTP_PROXY=$proxy_url" "ALL_PROXY=$proxy_url"
 Environment="https_proxy=$proxy_url" "http_proxy=$proxy_url" "all_proxy=$proxy_url"
@@ -71,10 +70,10 @@ clear_proxy() {
 
     echo "--> Reloading systemd daemon..."
     systemctl daemon-reload
-    
+
     echo "--> Restarting nix-daemon service..."
     systemctl restart nix-daemon
-    
+
     echo "✅ Proxy has been successfully cleared."
   else
     echo "ℹ️ No active proxy configuration found. Nothing to do."
@@ -83,22 +82,22 @@ clear_proxy() {
 
 # 3. 解析用户输入参数
 case "$1" in
-  http)
-    apply_proxy "$HTTP_PROXY_URL"
-    ;;
-  socks)
-    apply_proxy "$SOCKS_PROXY_URL"
-    ;;
-  off | clear)
-    clear_proxy
-    ;;
-  *)
-    # 使用 basename "$0" 让用法提示更通用
-    echo "Usage: $(basename "$0") {http|socks|off}"
-    echo
-    echo "  http      Set nix-daemon to use HTTP proxy ($HTTP_PROXY_URL)"
-    echo "  socks     Set nix-daemon to use SOCKS5 proxy ($SOCKS_PROXY_URL)"
-    echo "  off       Clear any proxy settings for nix-daemon"
-    exit 1
-    ;;
+http)
+  apply_proxy "$HTTP_PROXY_URL"
+  ;;
+socks)
+  apply_proxy "$SOCKS_PROXY_URL"
+  ;;
+off | clear)
+  clear_proxy
+  ;;
+*)
+  # 使用 basename "$0" 让用法提示更通用
+  echo "Usage: $(basename "$0") {http|socks|off}"
+  echo
+  echo "  http      Set nix-daemon to use HTTP proxy ($HTTP_PROXY_URL)"
+  echo "  socks     Set nix-daemon to use SOCKS5 proxy ($SOCKS_PROXY_URL)"
+  echo "  off       Clear any proxy settings for nix-daemon"
+  exit 1
+  ;;
 esac

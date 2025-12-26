@@ -1,7 +1,6 @@
 # modules/flake-parts/fmt.nix
 #
 # Formatter 配置 - 使用 treefmt-nix
-
 { inputs, ... }:
 {
   imports = [
@@ -14,8 +13,8 @@
 
       programs = {
         # Nix
-        nixfmt.enable = true;  # 使用 nixfmt-rfc-style
-        alejandra.enable = true;
+        nixfmt.enable = true; # 使用 nixfmt-rfc-style
+        # alejandra.enable = true;  # 与 nixfmt 冲突，只保留一个
         deadnix.enable = true;
         statix.enable = true;
 
@@ -42,13 +41,16 @@
         just.enable = true;
 
         # 通用
-        typos.enable = true;
+        # typos.enable = true;  # 拼写检查，不应该作为 formatter
         yamlfmt.enable = true;
         jsonfmt.enable = true;
       };
 
       settings = {
         on-unmatched = "warn";
+        excludes = [
+          "*.md" # 排除 markdown 文件
+        ];
       };
     };
   };

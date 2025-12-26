@@ -2,14 +2,9 @@
 #
 # WSL host configuration
 # WSL 主机配置
-
 {
-  config,
-  pkgs,
-  lib,
   ...
 }:
-
 {
   imports = [
     # Import base OS configuration
@@ -23,6 +18,4 @@
     # Import hardware configuration
     ./hardware.nix
   ];
-
-
 }

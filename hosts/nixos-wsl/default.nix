@@ -1,13 +1,19 @@
 # hosts/wsl/default.nix
 #
 # WSL 主机配置 - 自注册到 flake.modules.nixos
-
-{ config, inputs, ... }:
-
+{
+  config,
+  inputs,
+  ...
+}:
 {
   # 自注册到 flake.modules.nixos."hosts/nixos-wsl"
   flake.modules.nixos."hosts/nixos-wsl" =
-    { pkgs, lib, ... }:
+    {
+      pkgs,
+      lib,
+      ...
+    }:
     {
       imports =
         with config.flake.modules.nixos;

@@ -5,14 +5,10 @@
 #
 # This module contains all Git-related configurations including
 # the main git program configuration and related dotfiles.
-
 {
-  config,
-  pkgs,
   dotfiles,
   ...
 }:
-
 {
   # GitHub CLI tool
   programs.gh = {
