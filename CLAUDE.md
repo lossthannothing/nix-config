@@ -52,12 +52,38 @@ flake.modules.nixos."hosts/nixos-wsl" = {
 
 ## 工作约定
 
+### Claude Code 环境限制
+
+**重要：网络代理配置**
+
+Claude Code 的 Bash 工具运行在非交互式环境中，无法直接使用 `proxy` 函数。当需要执行网络操作时（如 `git push`），必须使用代理包装器：
+
+```bash
+# ❌ 错误 - 无法使用 proxy 函数
+proxy on http 7890
+git push
+
+# ✅ 正确 - 使用代理包装器
+/home/loss/nix-config/scripts/proxy-wrapper.sh git push
+
+# 或者直接设置环境变量（单条命令）
+HOST=$(ip route | awk '/default/ {print $3; exit}') && \
+  http_proxy="http://${HOST}:7890" \
+  https_proxy="http://${HOST}:7890" \
+  git push
+```
+
+**可用的代理脚本**：
+- `scripts/proxy-wrapper.sh` - 命令包装器，用法：`proxy-wrapper.sh <command>`
+- `scripts/set-proxy.sh` - 用于 source 设置环境变量（但每次 Bash 调用都是独立进程）
+
 ### 代码修改原则
 
 1. **最小化更改**：只修改与任务直接相关的代码
 2. **保持一致性**：遵循现有代码风格和结构
 3. **模块化优先**：新功能应创建独立模块，而非修改现有文件
 4. **测试再部署**：先 `nix flake check`，再考虑 rebuild
+5. **网络操作**：所有需要网络的命令（git push, curl 等）必须使用代理包装器
 
 ### 文件修改权限
 
