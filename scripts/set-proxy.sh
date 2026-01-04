@@ -8,7 +8,7 @@ PROXY_PORT="${1:-7890}"
 
 # 检测是否在 WSL
 _is_wsl() {
-  [[ -n "${WSL_DISTRO_NAME:-}" ]] && return 0
+  [[ -n ${WSL_DISTRO_NAME:-} ]] && return 0
   grep -qi "microsoft" /proc/version 2>/dev/null
 }
 
@@ -18,7 +18,7 @@ _get_host() {
     # 优先使用默认路由网关
     local gw
     gw=$(ip route 2>/dev/null | awk '/default/ {print $3; exit}')
-    [[ -z "$gw" ]] && gw=$(awk '/nameserver/ {print $2; exit}' /etc/resolv.conf 2>/dev/null)
+    [[ -z $gw ]] && gw=$(awk '/nameserver/ {print $2; exit}' /etc/resolv.conf 2>/dev/null)
     echo "${gw:-127.0.0.1}"
   else
     echo "127.0.0.1"

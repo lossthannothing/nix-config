@@ -6,7 +6,7 @@ set -euo pipefail
 # 获取 WSL 网关 IP
 if grep -qi "microsoft" /proc/version 2>/dev/null; then
   HOST=$(ip route 2>/dev/null | awk '/default/ {print $3; exit}')
-  [[ -z "$HOST" ]] && HOST=$(awk '/nameserver/ {print $2; exit}' /etc/resolv.conf 2>/dev/null)
+  [[ -z $HOST ]] && HOST=$(awk '/nameserver/ {print $2; exit}' /etc/resolv.conf 2>/dev/null)
 else
   HOST="127.0.0.1"
 fi

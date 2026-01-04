@@ -50,6 +50,288 @@ flake.modules.nixos."hosts/nixos-wsl" = {
 };
 ```
 
+### flake-parts 模块系统（关键！必读！）
+
+**⚠️ 重要：flake-parts 模块的写法与普通 flake 完全不同！**
+
+#### 错误写法 ❌
+
+```nix
+# modules/shell/tool.nix - 这是 flake-parts 模块
+{
+  flake.modules.homeManager.shell = {pkgs, ...}: {  # ❌ 错误！
+    programs.tool.enable = true;
+  };
+}
+```
+
+**为什么错误**：
+- 这里你是在 **定义一个 flake 输出值**（`flake.modules.homeManager.shell`）
+- 这个值本身应该 **就是** 一个 Home Manager 模块（一个函数）
+- 你不应该在 flake-parts 层面去"构造"或"包装"这个模块
+- 模块的参数（`pkgs`, `config` 等）会在 **被 imports 时** 由 Home Manager/NixOS 系统传入
+
+#### 正确写法 ✅
+
+```nix
+# modules/shell/tool.nix - flake-parts 模块
+{
+  flake.modules.homeManager.shell = {  # ✅ 简洁写法：直接 attrset
+    programs.tool.enable = true;
+  };
+}
+
+# 或者明确的函数形式
+{
+  flake.modules.homeManager.shell = _: {  # ✅ 明确写法：无参数函数
+    programs.tool.enable = true;
+  };
+}
+
+# 或者如果需要访问 flake-parts 的参数
+{config, inputs, ...}: {
+  flake.modules.homeManager.shell = {  # ← 外层接收 flake-parts 参数
+    programs.tool = {
+      enable = true;
+      package = inputs.some-input.packages.tool;  # 可以引用 inputs
+    };
+  };
+}
+
+# 如果需要 pkgs（必须使用函数形式）
+{
+  flake.modules.homeManager.shell = {pkgs, ...}: {  # ← 必须！不能省略
+    home.packages = [pkgs.tool];
+  };
+}
+```
+
+#### 核心理解
+
+```
+┌──────────────────────────────────────┐
+│  modules/shell/tool.nix              │  ← flake-parts 模块
+│  ┌────────────────────────────────┐  │
+│  │ { ... }: {                     │  │  ← 接收 flake-parts 参数
+│  │   flake.modules.homeManager... │  │     (config, inputs, self, etc.)
+│  │     = _: {                     │  │  ← 定义 Home Manager 模块
+│  │         programs.tool = ...    │  │     (稍后被 imports 时才执行)
+│  │       };                       │  │
+│  │ }                              │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
+
+                  ↓ import-tree 扫描
+
+┌──────────────────────────────────────┐
+│  flake.modules.homeManager.shell     │  ← 输出到 flake
+│  = _: { programs.tool = ...; }       │  ← 这是一个 Home Manager 模块
+└──────────────────────────────────────┘
+
+                  ↓ hosts 中 imports
+
+┌──────────────────────────────────────┐
+│  hosts/nixos-wsl/default.nix         │
+│  home-manager.users.loss = {         │
+│    imports = [                       │
+│      config.flake.modules...shell    │  ← 在这里被 import
+│    ];                                │
+│  }                                   │
+└──────────────────────────────────────┘
+
+                  ↓ Home Manager 调用
+
+Home Manager 传入 {pkgs, config, lib, ...}
+执行模块函数，获得配置
+```
+
+#### flake-parts 模块自动合并
+
+**关键特性**：多个模块可以定义同一选项，flake-parts 会自动合并：
+
+```nix
+# modules/shell/zsh.nix
+{
+  flake.modules.homeManager.shell = _: {
+    programs.zsh.envExtra = ''
+      export PATH="$HOME/.local/bin:$PATH"
+    '';
+  };
+}
+
+# modules/shell/zoxide.nix
+{
+  flake.modules.homeManager.shell = _: {
+    programs.zoxide.enable = true;
+    programs.zsh.envExtra = ''  # ✅ 不会冲突！会自动追加
+      eval "$(zoxide init zsh)"
+    '';
+  };
+}
+```
+
+**结果**：`programs.zsh.envExtra` 会包含两个模块的内容，自动合并成一个字符串。
+
+#### 何时需要使用 {pkgs, ...} 参数
+
+**关键规则**：仅当需要访问 pkgs 时才必须使用函数形式。
+
+```nix
+# ✅ 情况1：工具有 programs.<tool>.enable 选项（被 Home Manager 支持）
+# 可以用简洁的 attrset 形式
+{
+  flake.modules.homeManager.shell = {
+    programs.zoxide = {    # zoxide 有 Home Manager 模块
+      enable = true;
+      options = ["--cmd cd"];
+    };
+  };
+}
+
+# ✅ 情况2：工具没有 Home Manager 支持，只能用 home.packages
+# 必须使用 {pkgs, ...}: 函数形式来访问 pkgs
+{
+  flake.modules.homeManager.shell = {pkgs, ...}: {  # ← 必须！
+    home.packages = with pkgs; [
+      lstr    # lstr 没有 programs.lstr.enable
+      ripgrep
+    ];
+  };
+}
+
+# ✅ 情况3：需要自定义包来源（从 flake inputs 获取）
+{inputs, ...}: {  # ← 外层接收 flake-parts 参数
+  flake.modules.homeManager.shell = {
+    programs.tool.package = inputs.some-input.packages.tool;
+  };
+}
+
+# ❌ 错误：需要 pkgs 但忘记写函数参数
+{
+  flake.modules.homeManager.shell = {  # ❌ 错误！pkgs 未定义
+    home.packages = [pkgs.tool];  # 这里的 pkgs 从哪来？
+  };
+}
+```
+
+**快速判断方法**：
+1. 检查 [Home Manager Options](https://nix-community.github.io/home-manager/options.xhtml) 是否有 `programs.<tool>` 选项
+2. 有 → 用简洁的 attrset `{ programs.<tool>.enable = true; }`
+3. 没有，需要 `home.packages` → **必须**用 `{pkgs, ...}: { home.packages = [...]; }`
+
+#### 快速检查清单
+
+写 `modules/` 下的文件时：
+1. ✅ 我写的是 `flake.modules.xxx = ...`
+2. ✅ 等号右边是一个函数 `_: { ... }` 或 `{pkgs, ...}: { ... }`
+3. ✅ 函数体内是纯粹的 NixOS/Home Manager 配置
+4. ✅ 如果需要访问 flake inputs，在外层接收参数
+5. ❌ 我没有写成 `flake.modules.xxx = { pkgs, ...}: { ... }: { ... }` 这种嵌套
+
+### 模块注册规则（重要！）
+
+**关键原则**：`modules/dev/` 和 `modules/shell/` 下的所有模块都**自动合并**到对应的聚合模块中，无需手动在 hosts/ 中逐一导入。
+
+#### 目录与注册路径映射
+
+| 目录位置 | 模块注册路径 | 主机导入方式 | 说明 |
+|---------|------------|------------|-----|
+| `modules/dev/*.nix` | `homeManager.dev` | `dev` | 自动合并所有开发工具 |
+| `modules/shell/*.nix` | `homeManager.shell` | `shell` | 自动合并所有 shell 工具 |
+| `modules/base/*.nix` | `nixos.base` / `homeManager.base` | `base` | 基础配置 |
+| `modules/users/loss/` | `homeManager.loss` | `loss` | 用户特定配置 |
+
+#### 标准模块模板
+
+**开发工具模块**（放在 `modules/dev/`）：
+```nix
+# modules/dev/toolname.nix
+
+# 情况1：工具有 programs.<tool>.enable 选项（如 direnv, git 等）
+{
+  flake.modules.homeManager.dev = {
+    programs.toolname = {
+      enable = true;
+      # ... 其他配置
+    };
+  };
+}
+
+# 情况2：工具没有 Home Manager 支持（如 jq, ripgrep 等）
+{
+  flake.modules.homeManager.dev = {pkgs, ...}: {  # ← 必须有 pkgs 参数！
+    home.packages = with pkgs; [
+      toolname
+      another-tool
+    ];
+  };
+}
+```
+
+**Shell 工具模块**（放在 `modules/shell/`）：
+```nix
+# modules/shell/toolname.nix
+
+# 情况1：有 programs.<tool>.enable（如 zoxide, fzf, bat 等）
+{
+  flake.modules.homeManager.shell = {
+    programs.toolname = {
+      enable = true;
+      # ... 配置
+    };
+  };
+}
+
+# 情况2：只能用 home.packages（如 lstr 等）
+{
+  flake.modules.homeManager.shell = {pkgs, ...}: {  # ← 必须有 pkgs 参数！
+    home.packages = with pkgs; [toolname];
+  };
+}
+```
+
+**系统级模块**（放在 `modules/` 下）：
+```nix
+# modules/category/name.nix
+{
+  flake.modules.nixos.modulename = {
+    # NixOS 系统级配置
+    services.xxx.enable = true;
+  };
+}
+```
+
+#### 自动合并机制示例
+
+创建 `modules/dev/direnv.nix` 后：
+```nix
+# modules/dev/direnv.nix
+{
+  flake.modules.homeManager.dev = {
+    programs.direnv.enable = true;
+  };
+}
+```
+
+**不需要**在 `hosts/nixos-wsl/default.nix` 中修改任何内容！因为：
+```nix
+# hosts/nixos-wsl/default.nix（已存在）
+home-manager.users.loss = {
+  imports = with config.flake.modules.homeManager; [
+    dev    # ← 这个导入会自动包含所有 modules/dev/*.nix
+    shell  # ← 这个导入会自动包含所有 modules/shell/*.nix
+  ];
+};
+```
+
+#### 快速参考
+
+**添加新工具时的决策树**：
+1. 是开发工具？→ 放 `modules/dev/`，注册到 `homeManager.dev`
+2. 是 shell 工具？→ 放 `modules/shell/`，注册到 `homeManager.shell`
+3. 是系统服务？→ 放 `modules/`，注册到 `nixos.<name>`，需在 hosts 中手动导入
+4. 是用户配置？→ 放 `modules/users/loss/`，注册到 `homeManager.loss`
+
 ## 工作约定
 
 ### Claude Code 环境限制
@@ -107,41 +389,80 @@ HOST=$(ip route | awk '/default/ {print $3; exit}') && \
 - **直接给出方案**，避免过度解释
 - **展示代码差异**时使用清晰的格式
 - **提供可执行命令**，而非抽象描述
+- **优先参考本文档**：对于标准任务（添加工具、修改配置等），直接使用上面的模板，不要使用 Glob/Read 等工具探索现有代码，除非遇到非标准情况
 
 ## 常见任务模板
 
-### 任务：添加新开发工具
+### 任务：添加新开发工具（最常用）
 
 ```nix
-# 1. 创建或编辑 modules/dev/tools/<tool-name>.nix
+# 创建 modules/dev/<tool-name>.nix（仅此一步！）
+
+# 情况1：工具有 programs.<tool>.enable 选项
+# 查询：https://nix-community.github.io/home-manager/options.xhtml
 {
-  flake.modules = {
-    homeManager.<tool-name> = { pkgs, ... }: {
-      home.packages = [ pkgs.<tool> ];
+  flake.modules.homeManager.dev = {
+    programs.<tool> = {
+      enable = true;
       # 配置...
     };
   };
 }
 
-# 2. 在主机配置中引用
-# hosts/nixos-wsl/default.nix
-home-manager.users.loss = {
-  imports = with config.flake.modules.homeManager; [
-    # ... 现有导入
-    <tool-name>
-  ];
-};
+# 情况2：工具没有 Home Manager 支持
+{
+  flake.modules.homeManager.dev = {pkgs, ...}: {  # ← 必须有 pkgs 参数！
+    home.packages = with pkgs; [
+      <tool>
+      <another-tool>  # 可以一次添加多个
+    ];
+  };
+}
+# 无需修改 hosts/ 配置，自动生效！
 ```
 
-### 任务：修改系统配置
+### 任务：添加新 Shell 工具
 
 ```nix
-# 编辑 modules/base/system/default.nix 或创建新模块
-flake.modules.nixos.<module-name> = { pkgs, ... }: {
-  # 系统级配置
-  environment.systemPackages = [ ... ];
-  services.<service>.enable = true;
-};
+# 创建 modules/shell/<tool-name>.nix
+
+# 情况1：有 programs.<tool>.enable（如 zoxide, fzf, starship 等）
+{
+  flake.modules.homeManager.shell = {
+    programs.<tool> = {
+      enable = true;
+      # 配置...
+    };
+  };
+}
+
+# 情况2：没有 Home Manager 支持（如 lstr 等）
+{
+  flake.modules.homeManager.shell = {pkgs, ...}: {  # ← 必须有 pkgs 参数！
+    home.packages = with pkgs; [<tool>];
+  };
+}
+# 无需修改 hosts/ 配置，自动生效！
+```
+
+### 任务：添加系统服务
+
+```nix
+# 创建 modules/<category>/<name>.nix
+{
+  flake.modules.nixos.<module-name> = {
+    services.<service>.enable = true;
+    # 其他系统级配置...
+  };
+}
+```
+
+然后在 hosts/nixos-wsl/default.nix 中手动导入：
+```nix
+imports = with config.flake.modules.nixos; [
+  base
+  <module-name>  # ← 添加这行
+];
 ```
 
 ### 任务：调试配置问题
