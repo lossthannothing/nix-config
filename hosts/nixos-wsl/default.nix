@@ -117,6 +117,7 @@
           environment.shellAliases = {
             explorer = "/mnt/c/Windows/explorer.exe";
             notepad = "/mnt/c/Windows/System32/notepad.exe";
+            clip = "/mnt/c/Windows/System32/clip.exe"; # 复制管道内容到 Windows 剪贴板
             cdwin = "cd /mnt/c/Users/$WIN_USER";
             cddownloads = "cd /mnt/c/Users/$WIN_USER/Downloads";
             cddesktop = "cd /mnt/c/Users/$WIN_USER/Desktop";

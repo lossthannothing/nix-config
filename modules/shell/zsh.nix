@@ -22,27 +22,17 @@
         '';
 
         shellAliases = {
-          cat = "bat";
-          grep = "grep --color=auto";
-          zi = "z -i";
+          # 快速导航
           ".." = "cd ..";
           "..." = "cd ../..";
+
+          # 压缩文件处理（引用 functions.zsh 中的函数）
           extr = "extract";
           extrr = "extract_and_remove";
         };
 
         initContent = let
-          p10kInit = lib.mkOrder 500 ''
-            if [[ -r "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh" ]]; then
-              source "''${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-''${(%):-%n}.zsh"
-            fi
-            [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
-          '';
-
           toolsInit = lib.mkOrder 1000 ''
-            if command -v sheldon &> /dev/null; then
-              eval "$(sheldon source)"
-            fi
             if command -v fnm &> /dev/null; then
               eval "$(fnm env)"
             fi
@@ -53,14 +43,10 @@
           '';
         in
           lib.mkMerge [
-            p10kInit
             toolsInit
             functionsInit
           ];
       };
-
-      # ZSH 相关的 dotfiles
-      home.file.".p10k.zsh".source = "${dotfiles}/zsh/.p10k.zsh";
     };
   };
 }

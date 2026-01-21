@@ -359,6 +359,42 @@ HOST=$(ip route | awk '/default/ {print $3; exit}') && \
 - `scripts/proxy-wrapper.sh` - 命令包装器，用法：`proxy-wrapper.sh <command>`
 - `scripts/set-proxy.sh` - 用于 source 设置环境变量（但每次 Bash 调用都是独立进程）
 
+### 优先使用的现代化工具
+
+本项目已配置现代化命令行工具，**必须优先使用这些工具**而非传统命令：
+
+| 传统命令 | 现代替代 | 说明 | 配置位置 |
+|---------|---------|------|---------|
+| `find` | `fd` | 更快的文件查找，自动忽略 .git | `modules/shell/fd.nix` |
+| `grep` | `rg` (ripgrep) | 更快的文本搜索，自动忽略 .git | `modules/dev/ripgrep.nix` |
+| `ls` | `eza` | 现代文件列表，支持 tree、git 状态 | `modules/shell/eza.nix` |
+| `cat` | `bat` | 语法高亮、行号、Git 集成 | `modules/shell/bat.nix` |
+| `cd` | `z` (zoxide) | 智能目录跳转，`cdi` 交互选择 | `modules/shell/zoxide.nix` |
+| `tree` | `eza --tree` | 现代化目录树展示 | `modules/shell/eza.nix` |
+
+**示例**：
+```bash
+# ❌ 不要用
+find . -name "*.nix" -type f
+
+# ✅ 应该用
+fd --extension nix
+
+# ❌ 不要用
+grep -r "flake.modules" .
+
+# ✅ 应该用
+rg "flake.modules"
+
+# ❌ 不要用
+tree -L 3
+
+# ✅ 应该用
+eza --tree --level=3
+```
+
+**注意**：Glob 和 Grep 工具是例外，它们是 Claude Code 的内置工具，可以正常使用。
+
 ### 代码修改原则
 
 1. **最小化更改**：只修改与任务直接相关的代码
@@ -366,6 +402,8 @@ HOST=$(ip route | awk '/default/ {print $3; exit}') && \
 3. **模块化优先**：新功能应创建独立模块，而非修改现有文件
 4. **测试再部署**：先 `nix flake check`，再考虑 rebuild
 5. **网络操作**：所有需要网络的命令（git push, curl 等）必须使用代理包装器
+6. **优先现代工具**：使用上述现代化工具替代传统命令
+7. **专业注释风格**：代码注释应使用技术性描述，说明代码的功能、用途或实现逻辑，禁止使用批注式注释（如"这里删除了xxx"、"这里添加了xxx"、"这个功能是为了xxx"）
 
 ### 文件修改权限
 

@@ -39,21 +39,88 @@ flake.modules.nixos."hosts/<hostname>" = {
 nix-config/
 ├── flake.nix              # Flake entry point
 ├── flake.lock             # Dependency lock file
-├── apply_ref.sh           # Reference deployment script
+├── apply.sh               # Deployment script
+├── CLAUDE.md              # Claude AI assistant context
+├── AGENTS.md              # AI coding assistant instructions
+├── README.md              # This file
+├── scripts/               # Utility scripts
+│   ├── nix-proxy.sh       # Nix proxy helper
+│   ├── proxy-wrapper.sh   # Proxy wrapper for network operations
+│   └── set-proxy.sh       # Proxy environment setup
 ├── modules/               # Feature modules (auto-scanned)
 │   ├── base/              # Base system + user config
-│   ├── dev/               # Development tools
-│   │   └── languages/     # Language toolchains (Rust, Nix, etc.)
-│   ├── shell/             # Shell configurations (Zsh, Bash, etc.)
+│   │   ├── console/
+│   │   │   └── default.nix
+│   │   ├── system/
+│   │   │   └── default.nix
+│   │   ├── time/
+│   │   │   └── default.nix
+│   │   ├── home.nix       # Home Manager base config
+│   │   ├── i18n.nix       # Internationalization
+│   │   └── nix.nix        # Nix daemon settings
+│   ├── dev/               # Development tools (auto-merged to homeManager.dev)
+│   │   ├── languages/     # Language toolchains
+│   │   │   ├── go.nix
+│   │   │   ├── javascript.nix
+│   │   │   ├── nix.nix
+│   │   │   ├── python.nix
+│   │   │   └── rust.nix
+│   │   ├── tools/         # Development utilities
+│   │   │   └── devenv.nix
+│   │   ├── ansible.nix    # Configuration management
+│   │   ├── claude.nix     # Claude Code
+│   │   ├── direnv.nix     # Per-directory environments
+│   │   ├── editors.nix    # Code editors
+│   │   ├── git.nix        # Git configuration
+│   │   ├── hyperfine.nix  # Benchmarking tool
+│   │   ├── just.nix       # Task runner
+│   │   └── ripgrep.nix    # Fast grep (rg)
+│   ├── shell/             # Shell tools (auto-merged to homeManager.shell)
+│   │   ├── archive.nix    # Archive handling (extract functions)
+│   │   ├── bat.nix        # cat replacement with syntax highlighting
+│   │   ├── eza.nix        # ls replacement with git integration
+│   │   ├── fd.nix         # find replacement
+│   │   ├── fzf.nix        # Fuzzy finder
+│   │   ├── lstr.nix       # File listing utility
+│   │   ├── nix-your-shell.nix  # Nix shell integration
+│   │   ├── starship.nix   # Cross-shell prompt
+│   │   ├── zoxide.nix     # cd replacement (z/cdi)
+│   │   └── zsh.nix        # Zsh configuration
 │   ├── desktop/           # Desktop environment
+│   │   └── fonts.nix      # Font configuration
 │   ├── users/             # User-specific configs
+│   │   └── loss/
+│   │       └── default.nix
 │   └── flake-parts/       # Flake-parts generators
+│       ├── flake-parts.nix
+│       ├── flake.nix
+│       ├── fmt.nix        # Code formatting
 │       ├── host-machines.nix  # Auto-generates nixosConfigurations
-│       └── nixpkgs.nix        # Nixpkgs configuration
-└── hosts/                 # Host definitions (auto-scanned)
-    └── nixos-wsl/         # WSL host configuration
-        └── default.nix    # Self-registering host definition
+│       └── nixpkgs.nix        # Nixpkgs config + overlays (rust-overlay)
+├── hosts/                 # Host definitions (auto-scanned)
+│   └── nixos-wsl/         # WSL host configuration
+│       └── default.nix    # Self-registering host definition
+└── dotfiles/              # Submodule: external dotfiles repo
+    ├── bash/
+    ├── claude/
+    ├── config/
+    ├── cursor/
+    ├── git/
+    ├── zsh/               # Zsh dotfiles (functions.zsh)
+    └── README.md
 ```
+
+### Module Auto-Merge Rules
+
+**Important**: Modules in `dev/` and `shell/` are **automatically merged**:
+
+- `modules/dev/*.nix` → `homeManager.dev` (all dev tools in one import)
+- `modules/shell/*.nix` → `homeManager.shell` (all shell tools in one import)
+
+When adding a new tool:
+1. Create file in appropriate directory
+2. Register to correct module path
+3. **No need to modify host configs** - auto-included!
 
 ## Quick Start
 
