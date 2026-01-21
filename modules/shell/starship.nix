@@ -26,6 +26,7 @@
           diverged = "<>";
           renamed = "r";
           deleted = "x";
+          windows_starship = "'/mnt/c/Users/username/scoop/apps/starship/current/starship.exe";
         };
 
         aws = {
@@ -275,7 +276,6 @@
           HardenedBSD = "hbsd ";
           Illumos = "lum ";
           Ios = "ios ";
-          InstantOS = "inst ";
           Kali = "kali ";
           Linux = "lnx ";
           Mabox = "mbox ";

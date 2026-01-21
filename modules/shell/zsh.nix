@@ -8,6 +8,9 @@
       programs.zsh = {
         enable = true;
 
+        enableAutosuggestions = true;
+        enableSyntaxHighlighting = true;
+
         envExtra = ''
           # 私有环境变量配置
           PRIVATE_ENV_CONFIG="''${XDG_CONFIG_HOME:-$HOME/.config}/private/env"
