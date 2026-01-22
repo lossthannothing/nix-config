@@ -3,11 +3,9 @@
   lib,
   config,
   ...
-}:
-let
+}: let
   prefix = "hosts/";
-in
-{
+in {
   # 必须导入 HM 提供的 flakeModule 才能启用 flake.homeConfigurations 选项
   imports = [
     inputs.home-manager.flakeModules.home-manager
@@ -17,8 +15,7 @@ in
   flake.nixosConfigurations = lib.pipe config.flake.modules.nixos [
     (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
     (lib.mapAttrs' (
-      name: module:
-      let
+      name: module: let
         specialArgs = {
           inherit inputs;
           inherit (inputs) dotfiles;
@@ -26,8 +23,7 @@ in
             name = lib.removePrefix prefix name;
           };
         };
-      in
-      {
+      in {
         name = lib.removePrefix prefix name;
         value = inputs.nixpkgs.lib.nixosSystem {
           inherit specialArgs;
@@ -53,26 +49,26 @@ in
     (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
     (lib.mapAttrs (
       name: module:
-      inputs.home-manager.lib.homeManagerConfiguration {
-        # 独立模式必须显式指定 pkgs 实例
-        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+        inputs.home-manager.lib.homeManagerConfiguration {
+          # 独立模式必须显式指定 pkgs 实例
+          pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
 
-        extraSpecialArgs = {
-          inherit inputs;
-          inherit (inputs) dotfiles;
-          hostConfig = {
-            name = lib.removePrefix prefix name;
+          extraSpecialArgs = {
+            inherit inputs;
+            inherit (inputs) dotfiles;
+            hostConfig = {
+              name = lib.removePrefix prefix name;
+            };
           };
-        };
 
-        modules = [
-          module
-          # 针对非 NixOS 系统自动开启兼容层
-          {
-            targets.genericLinux.enable = true;
-          }
-        ];
-      }
+          modules = [
+            module
+            # 针对非 NixOS 系统自动开启兼容层
+            {
+              targets.genericLinux.enable = true;
+            }
+          ];
+        }
     ))
   ];
 }

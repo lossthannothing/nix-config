@@ -1,10 +1,9 @@
 {
   flake.modules = {
-    
     # ============================================================
     # 注入到 nixos.base
     # ============================================================
-    nixos.base = { pkgs, ... }: {
+    nixos.base = {pkgs, ...}: {
       nix = {
         channel.enable = false;
         nixPath = ["nixpkgs=${pkgs.path}"];
@@ -44,7 +43,11 @@
     # ============================================================
     # 注入到 homeManager.base
     # ============================================================
-    homeManager.base = { pkgs,lib, ... }: {
+    homeManager.base = {
+      pkgs,
+      lib,
+      ...
+    }: {
       nix = {
         # 【关键】Standalone 模式下必须显式安装 Nix 包，才能在 PATH 中找到 nix 命令
         package = lib.mkDefault pkgs.nix;
@@ -53,7 +56,7 @@
           experimental-features = ["nix-command" "flakes"];
           auto-optimise-store = true;
           warn-dirty = false;
-          
+
           # HM Standalone 用户级缓存配置
           substituters = [
             "https://mirrors.ustc.edu.cn/nix-channels/store"
