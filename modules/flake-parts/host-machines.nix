@@ -23,13 +23,18 @@ in {
           inherit specialArgs;
           modules = [
             module
+            # 引入 Home Manager 的 NixOS 模块以支持 home-manager.users 选项
             inputs.home-manager.nixosModules.home-manager
             {
-              # 统一为所有 NixOS 配置设置 Home Manager 集成
-              # useGlobalPkgs: 让 Home Manager 使用 NixOS 的 pkgs（包括 overlays）
-              # useUserPackages: 将包安装到用户环境而不是系统环境
-              home-manager.useGlobalPkgs = true;
+              # --- 解绑核心修改 ---
+              # 1. 不再强制 Home Manager 使用全局 NixOS pkgs
+              # 这允许 Home Manager 模块独立实例化自己的 pkgs，从而支持 Non-NixOS 场景
+              home-manager.useGlobalPkgs = false;
+
+              # 2. 依然将包安装到用户环境
               home-manager.useUserPackages = true;
+
+              # 3. 传递特殊的构建参数
               home-manager.extraSpecialArgs = specialArgs;
             }
           ];
