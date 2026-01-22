@@ -3,13 +3,22 @@
   lib,
   config,
   ...
-}: let
+}:
+let
   prefix = "hosts/";
-in {
+in
+{
+  # 必须导入 HM 提供的 flakeModule 才能启用 flake.homeConfigurations 选项
+  imports = [
+    inputs.home-manager.flakeModules.home-manager
+  ];
+
+  # 1. 映射 NixOS 入口 (保持你之前的解绑修改)
   flake.nixosConfigurations = lib.pipe config.flake.modules.nixos [
     (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
     (lib.mapAttrs' (
-      name: module: let
+      name: module:
+      let
         specialArgs = {
           inherit inputs;
           inherit (inputs) dotfiles;
@@ -17,28 +26,52 @@ in {
             name = lib.removePrefix prefix name;
           };
         };
-      in {
+      in
+      {
         name = lib.removePrefix prefix name;
         value = inputs.nixpkgs.lib.nixosSystem {
           inherit specialArgs;
           modules = [
             module
-            # 引入 Home Manager 的 NixOS 模块以支持 home-manager.users 选项
             inputs.home-manager.nixosModules.home-manager
             {
-              # --- 解绑核心修改 ---
-              # 1. 不再强制 Home Manager 使用全局 NixOS pkgs
-              # 这允许 Home Manager 模块独立实例化自己的 pkgs，从而支持 Non-NixOS 场景
+              # 解绑核心：不再强制使用全局 pkgs，支持模块独立实例化
               home-manager.useGlobalPkgs = false;
-
-              # 2. 依然将包安装到用户环境
               home-manager.useUserPackages = true;
-
-              # 3. 传递特殊的构建参数
               home-manager.extraSpecialArgs = specialArgs;
             }
           ];
         };
+      }
+    ))
+  ];
+
+  # 2. 新增：独立 Home Manager 入口 (用于 Fedora 等 Standalone 场景)
+  # 这将解决 "does not provide attribute" 报错
+  flake.homeConfigurations = lib.pipe config.flake.modules.homeManager [
+    # 过滤出 hosts/ 目录下的配置
+    (lib.filterAttrs (name: _: lib.hasPrefix prefix name))
+    (lib.mapAttrs (
+      name: module:
+      inputs.home-manager.lib.homeManagerConfiguration {
+        # 独立模式必须显式指定 pkgs 实例
+        pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+
+        extraSpecialArgs = {
+          inherit inputs;
+          inherit (inputs) dotfiles;
+          hostConfig = {
+            name = lib.removePrefix prefix name;
+          };
+        };
+
+        modules = [
+          module
+          # 针对非 NixOS 系统自动开启兼容层
+          {
+            targets.genericLinux.enable = true;
+          }
+        ];
       }
     ))
   ];

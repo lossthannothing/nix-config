@@ -84,19 +84,6 @@
 
               "$WINDSURF_EXE" --folder-uri "vscode-remote://wsl+NixOS$CURRENT_PATH"
             '')
-
-            # MCPS 环境设置
-            (pkgs.writeShellScriptBin "mcps-env-setup" ''
-              #!/bin/sh
-              export MCPS_HOME="/mnt/d/Workspace/Crack_IDE/mcps"
-              export CUNZHI_CLI="/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli"
-              export PATH="/mnt/d/Workspace:$PATH"
-              export PATH="/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli:$PATH"
-
-              echo "MCPS environment configured:"
-              echo "MCPS_HOME: $MCPS_HOME"
-              echo "CUNZHI_CLI: $CUNZHI_CLI"
-            '')
           ];
 
           # WSL 环境变量
@@ -104,12 +91,10 @@
             WIN_USER = "Lossilklauralin";
             BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe";
             MCPS_HOME = "/mnt/d/Workspace/Crack_IDE/mcps";
-            CUNZHI_CLI = "/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli";
           };
 
           # 交互式 Shell 路径设置
           environment.interactiveShellInit = lib.mkAfter ''
-            export PATH="$PATH:/mnt/d/Workspace:/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli"
             export PATH="$PATH:/mnt/c/Users/Lossilklauralin/AppData/Local/Programs/Microsoft VS Code/bin"
           '';
 
@@ -122,8 +107,6 @@
             cddownloads = "cd /mnt/c/Users/$WIN_USER/Downloads";
             cddesktop = "cd /mnt/c/Users/$WIN_USER/Desktop";
             wf = "windsurf-launcher .";
-            mcps-setup = "mcps-env-setup";
-            mcps-check = "echo 'MCPS_HOME:' $MCPS_HOME && echo 'CUNZHI_CLI:' $CUNZHI_CLI";
           };
 
           # 平台

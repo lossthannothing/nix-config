@@ -37,7 +37,7 @@
         extrr = "extract_and_remove";
       };
 
-      # 修复：根据最新的 flake check 警告，initExtra 已过时，应使用 initContent
+      # 修复：根据最新的 flake check 警告，initContent 已过时，应使用 initContent
       initContent = let
         toolsInit = lib.mkOrder 1000 ''
           if command -v fnm &> /dev/null; then
