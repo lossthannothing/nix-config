@@ -44,10 +44,10 @@
     # ============================================================
     # 注入到 homeManager.base
     # ============================================================
-    homeManager.base = { pkgs, ... }: {
+    homeManager.base = { pkgs,lib, ... }: {
       nix = {
         # 【关键】Standalone 模式下必须显式安装 Nix 包，才能在 PATH 中找到 nix 命令
-        package = pkgs.nix;
+        package = lib.mkDefault pkgs.nix;
 
         settings = {
           experimental-features = ["nix-command" "flakes"];
