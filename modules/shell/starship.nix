@@ -250,6 +250,12 @@
           symbol = "openstack ";
         };
 
+        os = {
+          format = "[$name]($style) ";
+          style = "bold yellow";
+          disabled = false;
+        };
+
         os.symbols = {
           AIX = "aix ";
           Alpaquita = "alq ";
