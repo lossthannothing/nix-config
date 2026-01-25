@@ -11,14 +11,18 @@
         force = true;
       };
 
-      ".claude/skills/nixos-cc-runtime/skill.md" = {
-        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/nixos-cc-runtime/skill.md";
+      ".claude/skills/claude-skills" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/claude-skills";
         force = true;
       };
 
-      ".claude/plugins/nix-module-builder" = {
-        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude-plugin/nix-module-builder";
-        # 移除 recursive = true; 以整个目录作为软链接，效率最高
+      ".claude/skills/building-plugins" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/building-plugins";
+        force = true;
+      };
+
+      ".claude/skills/consiliency-spawn-terminal" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/consiliency-spawn-terminal";
         force = true;
       };
     };
