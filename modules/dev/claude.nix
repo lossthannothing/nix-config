@@ -25,6 +25,16 @@
         source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/consiliency-spawn-terminal";
         force = true;
       };
+
+      ".claude/plugins/nix-module-builder" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/plugins/nix-module-builder";
+        force = true;
+      };
+
+      ".claude/skills/nixos-cc-runtime" = {
+        source = config.lib.file.mkOutOfStoreSymlink "${dotfiles}/claude/.claude/skills/nixos-cc-runtime";
+        force = true;
+      };
     };
   };
 }

@@ -1,5 +1,6 @@
-# CLAUDE.md
+**优先加载系统指令：执行任务前先加载 ~/.claude/CLAUDE.md 并遵循其协议**
 
+# CLAUDE.md
 本文件为 Claude（Anthropic AI 助手）提供项目特定的上下文和指导。
 
 ---
