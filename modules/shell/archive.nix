@@ -8,7 +8,6 @@
       home.packages = with pkgs; [
         unzip
         p7zip
-        xz
         cabextract
       ];
     };

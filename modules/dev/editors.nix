@@ -3,18 +3,10 @@
 # 编辑器配置
 {
   flake.modules = {
-    homeManager.dev = {
-      pkgs,
-      dotfiles,
-      ...
-    }: {
+    homeManager.dev = {pkgs, ...}: {
       home.packages = with pkgs; [
         neovim
-        lunarvim
       ];
-
-      # LunarVim 配置
-      home.file."./.config/lvim/config.lua".source = "${dotfiles}/config/.config/lvim/config.lua";
     };
   };
 }
