@@ -26,7 +26,7 @@ output_json() {
   local journal_lines=0
   local journal_relative=""
 
-  if [[ -n $journal_file ]]; then
+  if [[ -n "$journal_file" ]]; then
     journal_lines=$(count_lines "$journal_file")
     journal_relative="$DIR_WORKFLOW/$DIR_WORKSPACE/$developer/$(basename "$journal_file")"
   fi
@@ -34,7 +34,7 @@ output_json() {
   local branch=$(git branch --show-current 2>/dev/null || echo "unknown")
   local git_status=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
   local is_clean="true"
-  [[ $git_status != "0" ]] && is_clean="false"
+  [[ "$git_status" != "0" ]] && is_clean="false"
 
   # Build commits JSON
   local commits_json="["
@@ -43,7 +43,7 @@ output_json() {
     local hash=$(echo "$line" | cut -d' ' -f1)
     local msg=$(echo "$line" | cut -d' ' -f2-)
     msg=$(echo "$msg" | sed 's/"/\\"/g')
-    if [[ $first == "true" ]]; then
+    if [[ "$first" == "true" ]]; then
       first=false
     else
       commits_json+=","
@@ -55,15 +55,15 @@ output_json() {
   # Build tasks JSON
   local tasks_json="["
   first=true
-  if [[ -d $tasks_dir ]]; then
+  if [[ -d "$tasks_dir" ]]; then
     for d in "$tasks_dir"/*/; do
-      if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
+      if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
         local task_json="$d/$FILE_TASK_JSON"
-        if [[ -f $task_json ]]; then
+        if [[ -f "$task_json" ]]; then
           local dir_name=$(basename "$d")
           local name=$(jq -r '.name // .id // "unknown"' "$task_json" 2>/dev/null)
           local status=$(jq -r '.status // "unknown"' "$task_json" 2>/dev/null)
-          if [[ $first == "true" ]]; then
+          if [[ "$first" == "true" ]]; then
             first=false
           else
             tasks_json+=","
@@ -75,7 +75,7 @@ output_json() {
   fi
   tasks_json+="]"
 
-  cat <<EOF
+  cat << EOF
 {
   "developer": "$developer",
   "git": {
@@ -111,7 +111,7 @@ output_text() {
   echo ""
 
   echo "## DEVELOPER"
-  if [[ -z $developer ]]; then
+  if [[ -z "$developer" ]]; then
     echo "ERROR: Not initialized. Run: ./$DIR_WORKFLOW/$DIR_SCRIPTS/init-developer.sh <name>"
     exit 1
   fi
@@ -121,7 +121,7 @@ output_text() {
   echo "## GIT STATUS"
   echo "Branch: $(git branch --show-current 2>/dev/null || echo 'unknown')"
   local status_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
-  if [[ $status_count == "0" ]]; then
+  if [[ "$status_count" == "0" ]]; then
     echo "Working directory: Clean"
   else
     echo "Working directory: $status_count uncommitted change(s)"
@@ -137,13 +137,13 @@ output_text() {
 
   echo "## CURRENT TASK"
   local current_task=$(get_current_task "$repo_root")
-  if [[ -n $current_task ]]; then
+  if [[ -n "$current_task" ]]; then
     local current_task_dir="$repo_root/$current_task"
     local task_json="$current_task_dir/$FILE_TASK_JSON"
     echo "Path: $current_task"
 
-    if [[ -f $task_json ]]; then
-      if command -v jq &>/dev/null; then
+    if [[ -f "$task_json" ]]; then
+      if command -v jq &> /dev/null; then
         local t_name=$(jq -r '.name // .id // "unknown"' "$task_json")
         local t_status=$(jq -r '.status // "unknown"' "$task_json")
         local t_created=$(jq -r '.createdAt // "unknown"' "$task_json")
@@ -151,7 +151,7 @@ output_text() {
         echo "Name: $t_name"
         echo "Status: $t_status"
         echo "Created: $t_created"
-        if [[ -n $t_desc ]]; then
+        if [[ -n "$t_desc" ]]; then
           echo "Description: $t_desc"
         fi
       fi
@@ -170,14 +170,14 @@ output_text() {
   echo "## ACTIVE TASKS"
   local tasks_dir=$(get_tasks_dir "$repo_root")
   local task_count=0
-  if [[ -d $tasks_dir ]]; then
+  if [[ -d "$tasks_dir" ]]; then
     for d in "$tasks_dir"/*/; do
-      if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
+      if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
         local dir_name=$(basename "$d")
         local t_json="$d/$FILE_TASK_JSON"
         local status="unknown"
         local assignee="-"
-        if [[ -f $t_json ]] && command -v jq &>/dev/null; then
+        if [[ -f "$t_json" ]] && command -v jq &> /dev/null; then
           status=$(jq -r '.status // "unknown"' "$t_json")
           assignee=$(jq -r '.assignee // "-"' "$t_json")
         fi
@@ -194,14 +194,14 @@ output_text() {
 
   echo "## MY TASKS (Assigned to me)"
   local my_task_count=0
-  if [[ -d $tasks_dir ]]; then
+  if [[ -d "$tasks_dir" ]]; then
     for d in "$tasks_dir"/*/; do
-      if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
+      if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
         local t_json="$d/$FILE_TASK_JSON"
-        if [[ -f $t_json ]] && command -v jq &>/dev/null; then
+        if [[ -f "$t_json" ]] && command -v jq &> /dev/null; then
           local assignee=$(jq -r '.assignee // ""' "$t_json")
           local status=$(jq -r '.status // "planning"' "$t_json")
-          if [[ $assignee == "$developer" ]] && [[ $status != "done" ]]; then
+          if [[ "$assignee" == "$developer" ]] && [[ "$status" != "done" ]]; then
             local title=$(jq -r '.title // .name // "unknown"' "$t_json")
             local priority=$(jq -r '.priority // "P2"' "$t_json")
             echo "- [$priority] $title ($status)"
@@ -218,12 +218,12 @@ output_text() {
 
   echo "## JOURNAL FILE"
   local journal_file=$(get_active_journal_file "$repo_root")
-  if [[ -n $journal_file ]]; then
+  if [[ -n "$journal_file" ]]; then
     local lines=$(count_lines "$journal_file")
     local relative="$DIR_WORKFLOW/$DIR_WORKSPACE/$developer/$(basename "$journal_file")"
     echo "Active file: $relative"
     echo "Line count: $lines / 2000"
-    if [[ $lines -gt 1800 ]]; then
+    if [[ "$lines" -gt 1800 ]]; then
       echo "[!] WARNING: Approaching 2000 line limit!"
     fi
   else
@@ -244,20 +244,20 @@ output_text() {
 # Main Entry
 # =============================================================================
 
-if [[ ${BASH_SOURCE[0]} == "${0}" ]]; then
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
   case "${1:-}" in
-  --json | -j)
-    output_json
-    ;;
-  --help | -h)
-    echo "Get Session Context for AI Agent"
-    echo ""
-    echo "Usage:"
-    echo "  $0           Output context in text format"
-    echo "  $0 --json    Output context in JSON format"
-    ;;
-  *)
-    output_text
-    ;;
+    --json|-j)
+      output_json
+      ;;
+    --help|-h)
+      echo "Get Session Context for AI Agent"
+      echo ""
+      echo "Usage:"
+      echo "  $0           Output context in text format"
+      echo "  $0 --json    Output context in JSON format"
+      ;;
+    *)
+      output_text
+      ;;
   esac
 fi

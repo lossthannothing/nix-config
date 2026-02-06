@@ -14,24 +14,14 @@
         enable = true;
         defaultUser = "loss";
         docker-desktop.enable = true;
+        useWindowsDriver = true;
         wslConf.automount.root = "/mnt";
-        # 我们在 homeManager.wsl 中手动管理 PATH，避免 Windows 路径污染过重
+
         wslConf.interop.appendWindowsPath = false;
       };
 
-      # 禁用系统引导 (WSL 自带引导)
-      boot.loader.systemd-boot.enable = false;
-      boot.loader.grub.enable = false;
-
-      # 禁用冲突服务
-      systemd.services.systemd-resolved.enable = false;
-      systemd.services.systemd-networkd.enable = false;
-
       # NixOS 兼容性
       programs.nix-ld.enable = true;
-
-      # 系统级环境变量
-      environment.variables.MCPS_HOME = "/mnt/d/Workspace/Crack_IDE/mcps";
 
       # 平台定义
       nixpkgs.hostPlatform = "x86_64-linux";
@@ -72,13 +62,13 @@
       home.sessionVariables = {
         WIN_USER = "Lossilklauralin";
         BROWSER = "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe";
+        DISPLAY = ":0";
       };
 
       # 3. 常用别名
       home.shellAliases = {
         explorer = "/mnt/c/Windows/explorer.exe";
         notepad = "/mnt/c/Windows/System32/notepad.exe";
-        clip = "/mnt/c/Windows/System32/clip.exe";
         cdwin = "cd /mnt/c/Users/$WIN_USER";
         cddownloads = "cd /mnt/c/Users/$WIN_USER/Downloads";
         cddesktop = "cd /mnt/c/Users/$WIN_USER/Desktop";
@@ -88,7 +78,6 @@
       # 4. PATH 路径注入 (兼容 Zsh)
       programs.zsh.initContent = lib.mkAfter ''
         export PATH="$PATH:/mnt/c/Users/$WIN_USER/AppData/Local/Programs/Microsoft VS Code/bin"
-        export PATH="$PATH:/mnt/d/Workspace/Crack_IDE/mcps/cunzhi-cli"
       '';
     };
   };

@@ -48,7 +48,7 @@ DEV_TYPE=""
 REQUIREMENT=""
 
 show_usage() {
-  cat <<EOF
+  cat << EOF
 Usage: $0 --name <task-name> --type <dev-type> --requirement "<requirement>"
 
 Arguments:
@@ -67,27 +67,27 @@ EOF
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-  --name | -n)
-    TASK_NAME="$2"
-    shift 2
-    ;;
-  --type | -t)
-    DEV_TYPE="$2"
-    shift 2
-    ;;
-  --requirement | -r)
-    REQUIREMENT="$2"
-    shift 2
-    ;;
-  --help | -h)
-    show_usage
-    exit 0
-    ;;
-  *)
-    log_error "Unknown argument: $1"
-    show_usage
-    exit 1
-    ;;
+    --name|-n)
+      TASK_NAME="$2"
+      shift 2
+      ;;
+    --type|-t)
+      DEV_TYPE="$2"
+      shift 2
+      ;;
+    --requirement|-r)
+      REQUIREMENT="$2"
+      shift 2
+      ;;
+    --help|-h)
+      show_usage
+      exit 0
+      ;;
+    *)
+      log_error "Unknown argument: $1"
+      show_usage
+      exit 1
+      ;;
   esac
 done
 
@@ -106,7 +106,7 @@ if [ -z "$DEV_TYPE" ]; then
   exit 1
 fi
 
-if [[ ! $DEV_TYPE =~ ^(backend|frontend|fullstack)$ ]]; then
+if [[ ! "$DEV_TYPE" =~ ^(backend|frontend|fullstack)$ ]]; then
   log_error "Invalid dev type: $DEV_TYPE (must be: backend, frontend, fullstack)"
   exit 1
 fi
@@ -153,7 +153,7 @@ touch "$LOG_FILE"
 
 # Create a temporary runner script (will be deleted after agent starts)
 RUNNER_SCRIPT=$(mktemp)
-cat >"$RUNNER_SCRIPT" <<RUNNER_EOF
+cat > "$RUNNER_SCRIPT" << RUNNER_EOF
 #!/bin/bash
 cd "${PROJECT_ROOT}"
 
@@ -177,9 +177,9 @@ chmod +x "$RUNNER_SCRIPT"
 
 # Start agent in background
 AGENT_HTTPS_PROXY="${https_proxy:-}" \
-  AGENT_HTTP_PROXY="${http_proxy:-}" \
-  AGENT_ALL_PROXY="${all_proxy:-}" \
-  nohup "$RUNNER_SCRIPT" >"$LOG_FILE" 2>&1 &
+AGENT_HTTP_PROXY="${http_proxy:-}" \
+AGENT_ALL_PROXY="${all_proxy:-}" \
+nohup "$RUNNER_SCRIPT" > "$LOG_FILE" 2>&1 &
 AGENT_PID=$!
 
 log_success "Plan Agent started (PID: ${AGENT_PID})"

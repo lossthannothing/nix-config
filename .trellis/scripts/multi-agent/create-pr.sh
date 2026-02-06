@@ -38,38 +38,38 @@ DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-  --dry-run)
-    DRY_RUN=true
-    shift
-    ;;
-  -h | --help)
-    echo "Usage: $0 [task-dir] [--dry-run]"
-    echo ""
-    echo "Options:"
-    echo "  --dry-run    Show what would be done without making changes"
-    echo "  -h, --help   Show this help message"
-    exit 0
-    ;;
-  *)
-    if [[ -z $TARGET_DIR ]]; then
-      TARGET_DIR="$1"
-    fi
-    shift
-    ;;
+    --dry-run)
+      DRY_RUN=true
+      shift
+      ;;
+    -h|--help)
+      echo "Usage: $0 [task-dir] [--dry-run]"
+      echo ""
+      echo "Options:"
+      echo "  --dry-run    Show what would be done without making changes"
+      echo "  -h, --help   Show this help message"
+      exit 0
+      ;;
+    *)
+      if [[ -z "$TARGET_DIR" ]]; then
+        TARGET_DIR="$1"
+      fi
+      shift
+      ;;
   esac
 done
 
 # =============================================================================
 # Get Task Directory
 # =============================================================================
-if [[ -z $TARGET_DIR ]]; then
+if [[ -z "$TARGET_DIR" ]]; then
   # Try to get from .current-task
   CURRENT_TASK_FILE="$REPO_ROOT/.trellis/.current-task"
-  if [[ -f $CURRENT_TASK_FILE ]]; then
+  if [[ -f "$CURRENT_TASK_FILE" ]]; then
     TARGET_DIR=$(cat "$CURRENT_TASK_FILE")
   fi
 
-  if [[ -z $TARGET_DIR ]]; then
+  if [[ -z "$TARGET_DIR" ]]; then
     echo -e "${RED}Error: No task directory specified and no current task set${NC}"
     echo "Usage: $0 [task-dir] [--dry-run]"
     exit 1
@@ -77,12 +77,12 @@ if [[ -z $TARGET_DIR ]]; then
 fi
 
 # Support relative paths
-if [[ ! $TARGET_DIR == /* ]]; then
+if [[ ! "$TARGET_DIR" = /* ]]; then
   TARGET_DIR="$REPO_ROOT/$TARGET_DIR"
 fi
 
 TASK_JSON="$TARGET_DIR/task.json"
-if [[ ! -f $TASK_JSON ]]; then
+if [[ ! -f "$TASK_JSON" ]]; then
   echo -e "${RED}Error: task.json not found at $TARGET_DIR${NC}"
   exit 1
 fi
@@ -91,7 +91,7 @@ fi
 # Main
 # =============================================================================
 echo -e "${BLUE}=== Create PR ===${NC}"
-if [[ $DRY_RUN == "true" ]]; then
+if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "${YELLOW}[DRY-RUN MODE] No actual changes will be made${NC}"
 fi
 echo ""
@@ -104,12 +104,12 @@ DEV_TYPE=$(jq -r '.dev_type // "feature"' "$TASK_JSON")
 
 # Map dev_type to commit prefix
 case "$DEV_TYPE" in
-feature | frontend | backend | fullstack) COMMIT_PREFIX="feat" ;;
-bugfix | fix) COMMIT_PREFIX="fix" ;;
-refactor) COMMIT_PREFIX="refactor" ;;
-docs) COMMIT_PREFIX="docs" ;;
-test) COMMIT_PREFIX="test" ;;
-*) COMMIT_PREFIX="feat" ;;
+  feature|frontend|backend|fullstack) COMMIT_PREFIX="feat" ;;
+  bugfix|fix) COMMIT_PREFIX="fix" ;;
+  refactor) COMMIT_PREFIX="refactor" ;;
+  docs) COMMIT_PREFIX="docs" ;;
+  test) COMMIT_PREFIX="test" ;;
+  *) COMMIT_PREFIX="feat" ;;
 esac
 
 echo -e "Task: ${TASK_NAME}"
@@ -138,9 +138,9 @@ if git diff --cached --quiet 2>/dev/null; then
 
   # Check for unpushed commits
   UNPUSHED=$(git log "origin/${CURRENT_BRANCH}..HEAD" --oneline 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-  if [[ $UNPUSHED -eq 0 ]] 2>/dev/null; then
+  if [[ "$UNPUSHED" -eq 0 ]] 2>/dev/null; then
     # In dry-run, also reset the staging
-    if [[ $DRY_RUN == "true" ]]; then
+    if [[ "$DRY_RUN" == "true" ]]; then
       git reset HEAD >/dev/null 2>&1 || true
     fi
     echo -e "${RED}No changes to create PR${NC}"
@@ -152,7 +152,7 @@ else
   echo -e "${YELLOW}Committing changes...${NC}"
   COMMIT_MSG="${COMMIT_PREFIX}(${SCOPE}): ${TASK_NAME}"
 
-  if [[ $DRY_RUN == "true" ]]; then
+  if [[ "$DRY_RUN" == "true" ]]; then
     echo -e "[DRY-RUN] Would commit with message: ${COMMIT_MSG}"
     echo -e "[DRY-RUN] Staged files:"
     git diff --cached --name-only | sed 's/^/  - /'
@@ -164,7 +164,7 @@ fi
 
 # Push to remote
 echo -e "${YELLOW}Pushing to remote...${NC}"
-if [[ $DRY_RUN == "true" ]]; then
+if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "[DRY-RUN] Would push to: origin/${CURRENT_BRANCH}"
 else
   git push -u origin "$CURRENT_BRANCH"
@@ -176,7 +176,7 @@ echo -e "${YELLOW}Creating PR...${NC}"
 PR_TITLE="${COMMIT_PREFIX}(${SCOPE}): ${TASK_NAME}"
 PR_URL=""
 
-if [[ $DRY_RUN == "true" ]]; then
+if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "[DRY-RUN] Would create PR:"
   echo -e "  Title: ${PR_TITLE}"
   echo -e "  Base:  ${BASE_BRANCH}"
@@ -189,7 +189,7 @@ else
   # Check if PR already exists
   EXISTING_PR=$(gh pr list --head "$CURRENT_BRANCH" --base "$BASE_BRANCH" --json url --jq '.[0].url' 2>/dev/null || echo "")
 
-  if [[ -n $EXISTING_PR ]]; then
+  if [[ -n "$EXISTING_PR" ]]; then
     echo -e "${YELLOW}PR already exists: ${EXISTING_PR}${NC}"
     PR_URL="$EXISTING_PR"
   else
@@ -213,7 +213,7 @@ fi
 
 # Update task.json
 echo -e "${YELLOW}Updating task status...${NC}"
-if [[ $DRY_RUN == "true" ]]; then
+if [[ "$DRY_RUN" == "true" ]]; then
   echo -e "[DRY-RUN] Would update task.json:"
   echo -e "  status: completed"
   echo -e "  pr_url: ${PR_URL}"
@@ -221,18 +221,18 @@ if [[ $DRY_RUN == "true" ]]; then
 else
   # Get the phase number for create-pr action using common/phase.sh
   CREATE_PR_PHASE=$(get_phase_for_action "$TASK_JSON" "create-pr")
-  if [[ -z $CREATE_PR_PHASE ]] || [[ $CREATE_PR_PHASE == "0" ]]; then
-    CREATE_PR_PHASE=4 # Default fallback
+  if [[ -z "$CREATE_PR_PHASE" ]] || [[ "$CREATE_PR_PHASE" == "0" ]]; then
+    CREATE_PR_PHASE=4  # Default fallback
   fi
 
   jq --arg url "$PR_URL" --argjson phase "$CREATE_PR_PHASE" \
-    '.status = "completed" | .pr_url = $url | .current_phase = $phase' "$TASK_JSON" >"${TASK_JSON}.tmp"
+    '.status = "completed" | .pr_url = $url | .current_phase = $phase' "$TASK_JSON" > "${TASK_JSON}.tmp"
   mv "${TASK_JSON}.tmp" "$TASK_JSON"
   echo -e "${GREEN}Task status updated to 'completed', phase ${CREATE_PR_PHASE}${NC}"
 fi
 
 # In dry-run, reset the staging area
-if [[ $DRY_RUN == "true" ]]; then
+if [[ "$DRY_RUN" == "true" ]]; then
   git reset HEAD >/dev/null 2>&1 || true
 fi
 

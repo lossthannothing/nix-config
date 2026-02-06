@@ -41,46 +41,46 @@ FILTER_ASSIGNEE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-  -a | --assignee)
-    FILTER_ASSIGNEE="$2"
-    shift 2
-    ;;
-  --list)
-    ACTION="list"
-    shift
-    ;;
-  --detail)
-    ACTION="detail"
-    TARGET="$2"
-    shift 2
-    ;;
-  --watch)
-    ACTION="watch"
-    TARGET="$2"
-    shift 2
-    ;;
-  --log)
-    ACTION="log"
-    TARGET="$2"
-    shift 2
-    ;;
-  --progress)
-    ACTION="progress"
-    TARGET="$2"
-    shift 2
-    ;;
-  --registry)
-    ACTION="registry"
-    shift
-    ;;
-  -h | --help)
-    ACTION="help"
-    shift
-    ;;
-  *)
-    TARGET="$1"
-    shift
-    ;;
+    -a|--assignee)
+      FILTER_ASSIGNEE="$2"
+      shift 2
+      ;;
+    --list)
+      ACTION="list"
+      shift
+      ;;
+    --detail)
+      ACTION="detail"
+      TARGET="$2"
+      shift 2
+      ;;
+    --watch)
+      ACTION="watch"
+      TARGET="$2"
+      shift 2
+      ;;
+    --log)
+      ACTION="log"
+      TARGET="$2"
+      shift 2
+      ;;
+    --progress)
+      ACTION="progress"
+      TARGET="$2"
+      shift 2
+      ;;
+    --registry)
+      ACTION="registry"
+      shift
+      ;;
+    -h|--help)
+      ACTION="help"
+      shift
+      ;;
+    *)
+      TARGET="$1"
+      shift
+      ;;
   esac
 done
 
@@ -98,10 +98,10 @@ is_running() {
 status_color() {
   local status="$1"
   case "$status" in
-  completed) echo "${GREEN}" ;;
-  in_progress) echo "${BLUE}" ;;
-  planning) echo "${YELLOW}" ;;
-  *) echo "${DIM}" ;;
+    completed) echo "${GREEN}" ;;
+    in_progress) echo "${BLUE}" ;;
+    planning) echo "${YELLOW}" ;;
+    *) echo "${DIM}" ;;
   esac
 }
 
@@ -157,7 +157,7 @@ get_last_message() {
     text=$(tail -r "$log_file" 2>/dev/null | head -100 | jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text' 2>/dev/null | head -1)
   fi
   if [ -n "$text" ] && [ "$text" != "null" ]; then
-    echo "${text:0:max_len}"
+    echo "${text:0:$max_len}"
   fi
 }
 
@@ -187,7 +187,7 @@ get_recent_tasks() {
 # =============================================================================
 
 cmd_help() {
-  cat <<EOF
+  cat << EOF
 Multi-Agent Pipeline: Status Monitor
 
 Usage:
@@ -378,9 +378,9 @@ cmd_summary() {
     # Color priority
     local priority_color="${NC}"
     case "$priority" in
-    P0) priority_color="${RED}" ;;
-    P1) priority_color="${YELLOW}" ;;
-    P2) priority_color="${BLUE}" ;;
+      P0) priority_color="${RED}" ;;
+      P1) priority_color="${YELLOW}" ;;
+      P2) priority_color="${BLUE}" ;;
     esac
 
     if [ "$is_agent_running" = true ]; then
@@ -406,7 +406,7 @@ cmd_summary() {
         [ -n "$last_tool" ] && echo -e "  Activity: ${YELLOW}${last_tool}${NC}"
         echo -e "  PID:      ${DIM}${pid}${NC}"
         echo ""
-      } >>"$running_file"
+      } >> "$running_file"
 
     elif [ -n "$agent_info" ] && [ "$agent_info" != "null" ]; then
       # Stopped agent - check if completed or interrupted
@@ -422,7 +422,7 @@ cmd_summary() {
         {
           echo -e "${GREEN}✓${NC} ${name} ${GREEN}[completed]${NC}"
           echo ""
-        } >>"$stopped_file"
+        } >> "$stopped_file"
       else
         # Agent was interrupted/blocked
         {
@@ -441,7 +441,7 @@ cmd_summary() {
             echo -e "${RED}○${NC} ${name} ${RED}[stopped]${NC} ${DIM}(no session-id)${NC}"
           fi
           echo ""
-        } >>"$stopped_file"
+        } >> "$stopped_file"
       fi
 
     else
@@ -449,22 +449,22 @@ cmd_summary() {
       # Priority order: P0=0, P1=1, P2=2, P3=3 (lower = higher priority)
       local priority_order="2"
       case "$priority" in
-      P0) priority_order="0" ;;
-      P1) priority_order="1" ;;
-      P2) priority_order="2" ;;
-      P3) priority_order="3" ;;
+        P0) priority_order="0" ;;
+        P1) priority_order="1" ;;
+        P2) priority_order="2" ;;
+        P3) priority_order="3" ;;
       esac
       # Status order: in_progress=0, planning=1, completed=2 (lower = show first)
       local status_order="1"
       case "$status" in
-      in_progress) status_order="0" ;;
-      planning) status_order="1" ;;
-      completed) status_order="2" ;;
+        in_progress) status_order="0" ;;
+        planning) status_order="1" ;;
+        completed) status_order="2" ;;
       esac
       # Extract date from name (MM-DD) for sorting, use reverse for desc
       # Name format: MM-DD-xxx, extract MM-DD part and invert for desc sort
       local date_part=$(echo "$name" | grep -oE '^[0-9]{2}-[0-9]{2}' || echo "00-00")
-      echo -e "${assignee}\t${priority_order}\t${status_order}\t${date_part}\t${color}●${NC} ${name} (${status}) ${priority_color}[${priority}]${NC}" >>"$tasks_file"
+      echo -e "${assignee}\t${priority_order}\t${status_order}\t${date_part}\t${color}●${NC} ${name} (${status}) ${priority_color}[${priority}]${NC}" >> "$tasks_file"
     fi
   done
 
@@ -578,10 +578,10 @@ cmd_progress() {
     has_tasks=true
     local icon
     case "$status" in
-    completed) icon="${GREEN}✓${NC}" ;;
-    failed) icon="${RED}✗${NC}" ;;
-    async_launched) icon="${BLUE}▶${NC}" ;;
-    *) icon="${YELLOW}○${NC}" ;;
+      completed) icon="${GREEN}✓${NC}" ;;
+      failed) icon="${RED}✗${NC}" ;;
+      async_launched) icon="${BLUE}▶${NC}" ;;
+      *) icon="${YELLOW}○${NC}" ;;
     esac
     echo -e "  ${icon} ${summary}"
   done < <(get_recent_tasks "$log_file" 5 "$current_phase")
@@ -749,34 +749,34 @@ cmd_log() {
     [ -z "$type" ] && continue
 
     case "$type" in
-    system)
-      local subtype=$(echo "$line" | jq -r '.subtype // ""' 2>/dev/null)
-      echo -e "${CYAN}[SYSTEM]${NC} $subtype"
-      ;;
-    user)
-      local content=$(echo "$line" | jq -r '.message.content // empty' 2>/dev/null)
-      if [ -n "$content" ] && [ "$content" != "null" ]; then
-        echo -e "${GREEN}[USER]${NC} ${content:0:200}"
-      fi
-      ;;
-    assistant)
-      # Extract text or tool use
-      local text=$(echo "$line" | jq -r '.message.content[0].text // empty' 2>/dev/null)
-      local tool=$(echo "$line" | jq -r '.message.content[0].name // empty' 2>/dev/null)
+      system)
+        local subtype=$(echo "$line" | jq -r '.subtype // ""' 2>/dev/null)
+        echo -e "${CYAN}[SYSTEM]${NC} $subtype"
+        ;;
+      user)
+        local content=$(echo "$line" | jq -r '.message.content // empty' 2>/dev/null)
+        if [ -n "$content" ] && [ "$content" != "null" ]; then
+          echo -e "${GREEN}[USER]${NC} ${content:0:200}"
+        fi
+        ;;
+      assistant)
+        # Extract text or tool use
+        local text=$(echo "$line" | jq -r '.message.content[0].text // empty' 2>/dev/null)
+        local tool=$(echo "$line" | jq -r '.message.content[0].name // empty' 2>/dev/null)
 
-      if [ -n "$text" ] && [ "$text" != "null" ]; then
-        # Truncate long text
-        local display="${text:0:300}"
-        [ ${#text} -gt 300 ] && display="$display..."
-        echo -e "${BLUE}[ASSISTANT]${NC} $display"
-      elif [ -n "$tool" ] && [ "$tool" != "null" ]; then
-        echo -e "${YELLOW}[TOOL]${NC} $tool"
-      fi
-      ;;
-    result)
-      local tool_name=$(echo "$line" | jq -r '.tool // "unknown"' 2>/dev/null)
-      echo -e "${DIM}[RESULT]${NC} $tool_name completed"
-      ;;
+        if [ -n "$text" ] && [ "$text" != "null" ]; then
+          # Truncate long text
+          local display="${text:0:300}"
+          [ ${#text} -gt 300 ] && display="$display..."
+          echo -e "${BLUE}[ASSISTANT]${NC} $display"
+        elif [ -n "$tool" ] && [ "$tool" != "null" ]; then
+          echo -e "${YELLOW}[TOOL]${NC} $tool"
+        fi
+        ;;
+      result)
+        local tool_name=$(echo "$line" | jq -r '.tool // "unknown"' 2>/dev/null)
+        echo -e "${DIM}[RESULT]${NC} $tool_name completed"
+        ;;
     esac
   done
 }
@@ -801,28 +801,28 @@ cmd_registry() {
 # Main
 # =============================================================================
 case "$ACTION" in
-help)
-  cmd_help
-  ;;
-list)
-  cmd_list
-  ;;
-summary)
-  cmd_summary
-  ;;
-progress)
-  cmd_progress
-  ;;
-detail)
-  cmd_detail
-  ;;
-watch)
-  cmd_watch
-  ;;
-log)
-  cmd_log
-  ;;
-registry)
-  cmd_registry
-  ;;
+  help)
+    cmd_help
+    ;;
+  list)
+    cmd_list
+    ;;
+  summary)
+    cmd_summary
+    ;;
+  progress)
+    cmd_progress
+    ;;
+  detail)
+    cmd_detail
+    ;;
+  watch)
+    cmd_watch
+    ;;
+  log)
+    cmd_log
+    ;;
+  registry)
+    cmd_registry
+    ;;
 esac

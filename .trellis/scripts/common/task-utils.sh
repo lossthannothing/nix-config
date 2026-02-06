@@ -28,31 +28,31 @@ is_safe_task_path() {
   local repo_root="${2:-$(get_repo_root)}"
 
   # Check empty or null
-  if [[ -z $task_path ]] || [[ $task_path == "null" ]]; then
+  if [[ -z "$task_path" ]] || [[ "$task_path" = "null" ]]; then
     echo "Error: empty or null task path" >&2
     return 1
   fi
 
   # Reject absolute paths
-  if [[ $task_path == /* ]]; then
+  if [[ "$task_path" = /* ]]; then
     echo "Error: absolute path not allowed: $task_path" >&2
     return 1
   fi
 
   # Reject ".", "..", paths starting with "./" or "../", or containing ".."
-  if [[ $task_path == "." ]] || [[ $task_path == ".." ]] ||
-    [[ $task_path == "./" ]] || [[ $task_path == ./* ]] ||
-    [[ $task_path == *".."* ]]; then
+  if [[ "$task_path" = "." ]] || [[ "$task_path" = ".." ]] || \
+     [[ "$task_path" = "./" ]] || [[ "$task_path" == ./* ]] || \
+     [[ "$task_path" == *".."* ]]; then
     echo "Error: path traversal not allowed: $task_path" >&2
     return 1
   fi
 
   # Final check: ensure resolved path is not the repo root
   local abs_path="${repo_root}/${task_path}"
-  if [[ -e $abs_path ]]; then
+  if [[ -e "$abs_path" ]]; then
     local resolved=$(realpath "$abs_path" 2>/dev/null)
     local root_resolved=$(realpath "$repo_root" 2>/dev/null)
-    if [[ $resolved == "$root_resolved" ]]; then
+    if [[ "$resolved" = "$root_resolved" ]]; then
       echo "Error: path resolves to repo root: $task_path" >&2
       return 1
     fi
@@ -72,7 +72,7 @@ find_task_by_name() {
   local task_name="$1"
   local tasks_dir="$2"
 
-  if [[ -z $task_name ]] || [[ -z $tasks_dir ]]; then
+  if [[ -z "$task_name" ]] || [[ -z "$tasks_dir" ]]; then
     return 1
   fi
 
@@ -80,11 +80,11 @@ find_task_by_name() {
   local task_dir=$(find "$tasks_dir" -maxdepth 1 -type d -name "${task_name}" 2>/dev/null | head -1)
 
   # Try suffix match (e.g., "my-task" matches "01-21-my-task")
-  if [[ -z $task_dir ]]; then
+  if [[ -z "$task_dir" ]]; then
     task_dir=$(find "$tasks_dir" -maxdepth 1 -type d -name "*-${task_name}" 2>/dev/null | head -1)
   fi
 
-  if [[ -n $task_dir ]] && [[ -d $task_dir ]]; then
+  if [[ -n "$task_dir" ]] && [[ -d "$task_dir" ]]; then
     echo "$task_dir"
     return 0
   fi
@@ -104,7 +104,7 @@ archive_task_dir() {
   local task_dir_abs="$1"
   local repo_root="${2:-$(get_repo_root)}"
 
-  if [[ ! -d $task_dir_abs ]]; then
+  if [[ ! -d "$task_dir_abs" ]]; then
     echo "Error: task directory not found: $task_dir_abs" >&2
     return 1
   fi
@@ -135,7 +135,7 @@ archive_task_complete() {
   local task_dir_abs="$1"
   local repo_root="${2:-$(get_repo_root)}"
 
-  if [[ ! -d $task_dir_abs ]]; then
+  if [[ ! -d "$task_dir_abs" ]]; then
     echo "Error: task directory not found: $task_dir_abs" >&2
     return 1
   fi
