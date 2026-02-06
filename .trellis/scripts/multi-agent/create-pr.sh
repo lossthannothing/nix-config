@@ -77,7 +77,7 @@ if [[ -z $TARGET_DIR ]]; then
 fi
 
 # Support relative paths
-if [[ ! $TARGET_DIR == /* ]]; then
+if [[ $TARGET_DIR != /* ]]; then
   TARGET_DIR="$REPO_ROOT/$TARGET_DIR"
 fi
 

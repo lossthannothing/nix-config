@@ -283,7 +283,7 @@ cmd_init_context() {
   fi
 
   # Support relative paths
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -351,7 +351,7 @@ cmd_add_context() {
   fi
 
   # Support relative paths
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -453,7 +453,7 @@ cmd_validate() {
     exit 1
   fi
 
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -488,7 +488,7 @@ cmd_list_context() {
     exit 1
   fi
 
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -767,7 +767,7 @@ cmd_set_branch() {
   fi
 
   # Support relative paths
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -803,7 +803,7 @@ cmd_set_scope() {
   fi
 
   # Support relative paths
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -855,7 +855,7 @@ cmd_create_pr() {
   fi
 
   # Support relative paths
-  if [[ ! $target_dir == /* ]]; then
+  if [[ $target_dir != /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
