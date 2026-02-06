@@ -28,20 +28,20 @@ INDEX_FILE="$DEV_DIR/index.md"
 
 get_latest_journal_info() {
   local latest_file=""
-  local latest_num=-1  # Start at -1 so journal-0.md can be detected (0 > -1)
+  local latest_num=-1 # Start at -1 so journal-0.md can be detected (0 > -1)
 
   for f in "$DEV_DIR"/${FILE_JOURNAL_PREFIX}*.md; do
-    if [[ -f "$f" ]]; then
+    if [[ -f $f ]]; then
       local num=$(basename "$f" | sed "s/${FILE_JOURNAL_PREFIX}\([0-9]*\)\.md/\1/")
-      if [[ "$num" -gt "$latest_num" ]]; then
+      if [[ $num -gt $latest_num ]]; then
         latest_num=$num
         latest_file="$f"
       fi
     fi
   done
 
-  if [[ -n "$latest_file" ]]; then
-    local lines=$(wc -l < "$latest_file" | tr -d ' ')
+  if [[ -n $latest_file ]]; then
+    local lines=$(wc -l <"$latest_file" | tr -d ' ')
     echo "$latest_file:$latest_num:$lines"
   else
     echo ":0:0"
@@ -60,12 +60,12 @@ count_journal_files() {
   local active_file="${FILE_JOURNAL_PREFIX}$active_num.md"
 
   for f in $(ls -v "$DEV_DIR"/${FILE_JOURNAL_PREFIX}*.md 2>/dev/null | sort -t- -k2 -n -r); do
-    if [[ -f "$f" ]]; then
+    if [[ -f $f ]]; then
       local filename=$(basename "$f")
-      local lines=$(wc -l < "$f" | tr -d ' ')
+      local lines=$(wc -l <"$f" | tr -d ' ')
 
       local status="Archived"
-      if [[ "$filename" == "$active_file" ]]; then
+      if [[ $filename == "$active_file" ]]; then
         status="Active"
       fi
 
@@ -81,7 +81,7 @@ create_new_journal_file() {
   local prev_num=$((num - 1))
   local new_file="$DEV_DIR/${FILE_JOURNAL_PREFIX}$num.md"
 
-  cat > "$new_file" << EOF
+  cat >"$new_file" <<EOF
 # Journal - $DEVELOPER (Part $num)
 
 > Continuation from \`${FILE_JOURNAL_PREFIX}$prev_num.md\` (archived at ~$MAX_LINES lines)
@@ -101,10 +101,10 @@ generate_session_content() {
   local extra_content=$5
 
   local commit_table=""
-  if [[ -n "$commit" && "$commit" != "-" ]]; then
+  if [[ -n $commit && $commit != "-" ]]; then
     commit_table="| Hash | Message |
 |------|---------|"
-    IFS=',' read -ra COMMITS <<< "$commit"
+    IFS=',' read -ra COMMITS <<<"$commit"
     for c in "${COMMITS[@]}"; do
       c=$(echo "$c" | tr -d ' ')
       commit_table="$commit_table
@@ -114,7 +114,7 @@ generate_session_content() {
     commit_table="(No commits - planning session)"
   fi
 
-  cat << EOF
+  cat <<EOF
 
 ## Session $session_num: $title
 
@@ -159,7 +159,7 @@ update_index() {
 
   # Format commit for display
   local commit_display="-"
-  if [[ -n "$commit" && "$commit" != "-" ]]; then
+  if [[ -n $commit && $commit != "-" ]]; then
     commit_display=$(echo "$commit" | sed 's/,/, /g' | sed 's/\([a-f0-9]\{7,\}\)/`\1`/g')
   fi
 
@@ -183,47 +183,47 @@ update_index() {
   local in_session_history=false
   local header_written=false
 
-  while IFS= read -r line || [[ -n "$line" ]]; do
-    if [[ "$line" == *"@@@auto:current-status"* ]]; then
-      echo "$line" >> "$tmp_file"
+  while IFS= read -r line || [[ -n $line ]]; do
+    if [[ $line == *"@@@auto:current-status"* ]]; then
+      echo "$line" >>"$tmp_file"
       in_current_status=true
-      echo "- **Active File**: \`$active_file\`" >> "$tmp_file"
-      echo "- **Total Sessions**: $new_session" >> "$tmp_file"
-      echo "- **Last Active**: $TODAY" >> "$tmp_file"
+      echo "- **Active File**: \`$active_file\`" >>"$tmp_file"
+      echo "- **Total Sessions**: $new_session" >>"$tmp_file"
+      echo "- **Last Active**: $TODAY" >>"$tmp_file"
       continue
     fi
 
-    if [[ "$line" == *"@@@/auto:current-status"* ]]; then
+    if [[ $line == *"@@@/auto:current-status"* ]]; then
       in_current_status=false
-      echo "$line" >> "$tmp_file"
+      echo "$line" >>"$tmp_file"
       continue
     fi
 
-    if [[ "$line" == *"@@@auto:active-documents"* ]]; then
-      echo "$line" >> "$tmp_file"
+    if [[ $line == *"@@@auto:active-documents"* ]]; then
+      echo "$line" >>"$tmp_file"
       in_active_documents=true
-      echo "| File | Lines | Status |" >> "$tmp_file"
-      echo "|------|-------|--------|" >> "$tmp_file"
-      echo "$files_table" >> "$tmp_file"
+      echo "| File | Lines | Status |" >>"$tmp_file"
+      echo "|------|-------|--------|" >>"$tmp_file"
+      echo "$files_table" >>"$tmp_file"
       continue
     fi
 
-    if [[ "$line" == *"@@@/auto:active-documents"* ]]; then
+    if [[ $line == *"@@@/auto:active-documents"* ]]; then
       in_active_documents=false
-      echo "$line" >> "$tmp_file"
+      echo "$line" >>"$tmp_file"
       continue
     fi
 
-    if [[ "$line" == *"@@@auto:session-history"* ]]; then
-      echo "$line" >> "$tmp_file"
+    if [[ $line == *"@@@auto:session-history"* ]]; then
+      echo "$line" >>"$tmp_file"
       in_session_history=true
       header_written=false
       continue
     fi
 
-    if [[ "$line" == *"@@@/auto:session-history"* ]]; then
+    if [[ $line == *"@@@/auto:session-history"* ]]; then
       in_session_history=false
-      echo "$line" >> "$tmp_file"
+      echo "$line" >>"$tmp_file"
       continue
     fi
 
@@ -236,16 +236,16 @@ update_index() {
     fi
 
     if $in_session_history; then
-      echo "$line" >> "$tmp_file"
-      if [[ "$line" == "|---"* ]] && ! $header_written; then
-        echo "| $new_session | $TODAY | $title | $commit_display |" >> "$tmp_file"
+      echo "$line" >>"$tmp_file"
+      if [[ $line == "|---"* ]] && ! $header_written; then
+        echo "| $new_session | $TODAY | $title | $commit_display |" >>"$tmp_file"
         header_written=true
       fi
       continue
     fi
 
-    echo "$line" >> "$tmp_file"
-  done < "$INDEX_FILE"
+    echo "$line" >>"$tmp_file"
+  done <"$INDEX_FILE"
 
   mv "$tmp_file" "$INDEX_FILE"
 
@@ -265,35 +265,35 @@ add_session() {
 
   while [[ $# -gt 0 ]]; do
     case $1 in
-      --title)
-        title="$2"
-        shift 2
-        ;;
-      --commit)
-        commit="$2"
-        shift 2
-        ;;
-      --summary)
-        summary="$2"
-        shift 2
-        ;;
-      --content-file)
-        content_file="$2"
-        shift 2
-        ;;
-      *)
-        shift
-        ;;
+    --title)
+      title="$2"
+      shift 2
+      ;;
+    --commit)
+      commit="$2"
+      shift 2
+      ;;
+    --summary)
+      summary="$2"
+      shift 2
+      ;;
+    --content-file)
+      content_file="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
     esac
   done
 
-  if [[ -z "$title" ]]; then
+  if [[ -z $title ]]; then
     echo "Error: --title is required" >&2
     echo "Usage: $0 --title \"Session Title\" [--commit \"hash1,hash2\"] [--summary \"Brief summary\"]" >&2
     exit 1
   fi
 
-  if [[ -n "$content_file" && -f "$content_file" ]]; then
+  if [[ -n $content_file && -f $content_file ]]; then
     extra_content=$(cat "$content_file")
   elif [[ ! -t 0 ]]; then
     extra_content=$(cat)
@@ -333,7 +333,7 @@ add_session() {
     echo "Created: $target_file" >&2
   fi
 
-  echo "$session_content" >> "$target_file"
+  echo "$session_content" >>"$target_file"
   echo "[OK] Appended session to $(basename "$target_file")" >&2
 
   echo "" >&2
@@ -375,10 +375,10 @@ show_help() {
 # =============================================================================
 
 case "${1:-}" in
-  --help|-h|help)
-    show_help
-    ;;
-  *)
-    add_session "$@"
-    ;;
+--help | -h | help)
+  show_help
+  ;;
+*)
+  add_session "$@"
+  ;;
 esac

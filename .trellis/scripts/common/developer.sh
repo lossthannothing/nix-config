@@ -22,7 +22,7 @@ init_developer() {
   local name="$1"
   local repo_root="${2:-$(get_repo_root)}"
 
-  if [[ -z "$name" ]]; then
+  if [[ -z $name ]]; then
     echo "Error: developer name is required" >&2
     return 1
   fi
@@ -31,7 +31,7 @@ init_developer() {
   local workspace_dir="$repo_root/$DIR_WORKFLOW/$DIR_WORKSPACE/$name"
 
   # Create .developer file
-  cat > "$dev_file" << EOF
+  cat >"$dev_file" <<EOF
 name=$name
 initialized_at=$(date -Iseconds)
 EOF
@@ -41,8 +41,8 @@ EOF
 
   # Create initial journal file
   local journal_file="$workspace_dir/${FILE_JOURNAL_PREFIX}1.md"
-  if [[ ! -f "$journal_file" ]]; then
-    cat > "$journal_file" << JOURNAL_EOF
+  if [[ ! -f $journal_file ]]; then
+    cat >"$journal_file" <<JOURNAL_EOF
 # Journal - $name (Part 1)
 
 > AI development session journal
@@ -55,8 +55,8 @@ JOURNAL_EOF
 
   # Create index.md with markers for auto-update
   local index_file="$workspace_dir/index.md"
-  if [[ ! -f "$index_file" ]]; then
-    cat > "$index_file" << INDEX_EOF
+  if [[ ! -f $index_file ]]; then
+    cat >"$index_file" <<INDEX_EOF
 # Workspace Index - $name
 
 > Journal tracking for AI development sessions.
@@ -119,7 +119,7 @@ show_developer_info() {
   local repo_root="${1:-$(get_repo_root)}"
   local developer=$(get_developer "$repo_root")
 
-  if [[ -z "$developer" ]]; then
+  if [[ -z $developer ]]; then
     echo "Developer: (not initialized)"
   else
     echo "Developer: $developer"

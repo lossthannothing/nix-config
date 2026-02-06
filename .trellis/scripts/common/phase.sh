@@ -76,7 +76,7 @@ set_phase() {
     return 1
   fi
 
-  jq --argjson phase "$phase" '.current_phase = $phase' "$task_json" > "${task_json}.tmp"
+  jq --argjson phase "$phase" '.current_phase = $phase' "$task_json" >"${task_json}.tmp"
   mv "${task_json}.tmp" "$task_json"
 }
 
@@ -120,12 +120,12 @@ map_subagent_to_action() {
   local subagent_type="$1"
 
   case "$subagent_type" in
-    implement) echo "implement" ;;
-    check) echo "check" ;;
-    debug) echo "debug" ;;
-    research) echo "research" ;;
-    # finish uses check agent but is a different action
-    *) echo "$subagent_type" ;;
+  implement) echo "implement" ;;
+  check) echo "check" ;;
+  debug) echo "debug" ;;
+  research) echo "research" ;;
+  # finish uses check agent but is a different action
+  *) echo "$subagent_type" ;;
   esac
 }
 

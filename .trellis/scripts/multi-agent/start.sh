@@ -57,7 +57,7 @@ if [ -z "$TASK_DIR" ]; then
 fi
 
 # Normalize paths
-if [[ "$TASK_DIR" = /* ]]; then
+if [[ $TASK_DIR == /* ]]; then
   TASK_DIR_RELATIVE="${TASK_DIR#$PROJECT_ROOT/}"
   TASK_DIR_ABS="$TASK_DIR"
 else
@@ -162,7 +162,7 @@ if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
 
   # Update task.json with worktree_path and base_branch
   jq --arg path "$WORKTREE_PATH" --arg base "$BASE_BRANCH" \
-    '.worktree_path = $path | .base_branch = $base' "$TASK_JSON" > "${TASK_JSON}.tmp"
+    '.worktree_path = $path | .base_branch = $base' "$TASK_JSON" >"${TASK_JSON}.tmp"
   mv "${TASK_JSON}.tmp" "$TASK_JSON"
 
   # ----- Copy environment files -----
@@ -183,7 +183,7 @@ if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
       cp "$SOURCE" "$TARGET"
       ((COPY_COUNT++))
     fi
-  done <<< "$COPY_LIST"
+  done <<<"$COPY_LIST"
 
   if [ $COPY_COUNT -gt 0 ]; then
     log_success "Copied $COPY_COUNT file(s)"
@@ -212,7 +212,7 @@ if [ -z "$WORKTREE_PATH" ] || [ ! -d "$WORKTREE_PATH" ]; then
       log_error "Hook failed: $cmd"
       exit 1
     fi
-  done <<< "$POST_CREATE"
+  done <<<"$POST_CREATE"
 
   if [ $HOOK_COUNT -gt 0 ]; then
     log_success "Ran $HOOK_COUNT hook(s)"
@@ -228,7 +228,7 @@ fi
 log_info "Step 2: Setting current task in worktree..."
 
 mkdir -p "${WORKTREE_PATH}/$DIR_WORKFLOW"
-echo "$TASK_DIR_RELATIVE" > "${WORKTREE_PATH}/$DIR_WORKFLOW/$FILE_CURRENT_TASK"
+echo "$TASK_DIR_RELATIVE" >"${WORKTREE_PATH}/$DIR_WORKFLOW/$FILE_CURRENT_TASK"
 log_success "Current task set: ${TASK_DIR_RELATIVE}"
 
 # =============================================================================
@@ -237,7 +237,7 @@ log_success "Current task set: ${TASK_DIR_RELATIVE}"
 log_info "Step 3: Starting Claude agent..."
 
 # Update task status
-jq '.status = "in_progress"' "$TASK_JSON" > "${TASK_JSON}.tmp"
+jq '.status = "in_progress"' "$TASK_JSON" >"${TASK_JSON}.tmp"
 mv "${TASK_JSON}.tmp" "$TASK_JSON"
 
 cd "$WORKTREE_PATH"
@@ -250,11 +250,11 @@ touch "$LOG_FILE"
 
 # Generate session ID for resume support
 SESSION_ID=$(uuidgen | tr '[:upper:]' '[:lower:]')
-echo "$SESSION_ID" > "$SESSION_ID_FILE"
+echo "$SESSION_ID" >"$SESSION_ID_FILE"
 log_info "Session ID: ${SESSION_ID}"
 
 # Create runner script (uses --agent flag to load dispatch agent directly)
-cat > "$RUNNER_SCRIPT" << RUNNER_EOF
+cat >"$RUNNER_SCRIPT" <<RUNNER_EOF
 #!/bin/bash
 cd "\$(dirname "\$0")"
 export https_proxy="\${AGENT_HTTPS_PROXY:-}"
@@ -268,9 +268,9 @@ chmod +x "$RUNNER_SCRIPT"
 
 # Start agent in background
 AGENT_HTTPS_PROXY="${https_proxy:-}" \
-AGENT_HTTP_PROXY="${http_proxy:-}" \
-AGENT_ALL_PROXY="${all_proxy:-}" \
-nohup "$RUNNER_SCRIPT" > "$LOG_FILE" 2>&1 &
+  AGENT_HTTP_PROXY="${http_proxy:-}" \
+  AGENT_ALL_PROXY="${all_proxy:-}" \
+  nohup "$RUNNER_SCRIPT" >"$LOG_FILE" 2>&1 &
 AGENT_PID=$!
 
 log_success "Agent started with PID: ${AGENT_PID}"

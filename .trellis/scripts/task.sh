@@ -62,14 +62,14 @@ _slugify() {
 # =============================================================================
 
 get_implement_base() {
-  cat << EOF
+  cat <<EOF
 {"file": "$DIR_WORKFLOW/workflow.md", "reason": "Project workflow and conventions"}
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/shared/index.md", "reason": "Shared coding standards"}
 EOF
 }
 
 get_implement_backend() {
-  cat << EOF
+  cat <<EOF
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/backend/index.md", "reason": "Backend development guide"}
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/backend/api-module.md", "reason": "API module conventions"}
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/backend/quality.md", "reason": "Code quality requirements"}
@@ -77,7 +77,7 @@ EOF
 }
 
 get_implement_frontend() {
-  cat << EOF
+  cat <<EOF
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/frontend/index.md", "reason": "Frontend development guide"}
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/frontend/components.md", "reason": "Component conventions"}
 EOF
@@ -86,15 +86,15 @@ EOF
 get_check_context() {
   local dev_type="$1"
 
-  cat << EOF
+  cat <<EOF
 {"file": ".claude/commands/trellis/finish-work.md", "reason": "Finish work checklist"}
 {"file": "$DIR_WORKFLOW/$DIR_SPEC/shared/index.md", "reason": "Shared coding standards"}
 EOF
 
-  if [[ "$dev_type" == "backend" ]] || [[ "$dev_type" == "fullstack" ]]; then
+  if [[ $dev_type == "backend" ]] || [[ $dev_type == "fullstack" ]]; then
     echo '{"file": ".claude/commands/trellis/check-backend.md", "reason": "Backend check spec"}'
   fi
-  if [[ "$dev_type" == "frontend" ]] || [[ "$dev_type" == "fullstack" ]]; then
+  if [[ $dev_type == "frontend" ]] || [[ $dev_type == "fullstack" ]]; then
     echo '{"file": ".claude/commands/trellis/check-frontend.md", "reason": "Frontend check spec"}'
   fi
 }
@@ -104,10 +104,10 @@ get_debug_context() {
 
   echo "{\"file\": \"$DIR_WORKFLOW/$DIR_SPEC/shared/index.md\", \"reason\": \"Shared coding standards\"}"
 
-  if [[ "$dev_type" == "backend" ]] || [[ "$dev_type" == "fullstack" ]]; then
+  if [[ $dev_type == "backend" ]] || [[ $dev_type == "fullstack" ]]; then
     echo '{"file": ".claude/commands/trellis/check-backend.md", "reason": "Backend check spec"}'
   fi
-  if [[ "$dev_type" == "frontend" ]] || [[ "$dev_type" == "fullstack" ]]; then
+  if [[ $dev_type == "frontend" ]] || [[ $dev_type == "fullstack" ]]; then
     echo '{"file": ".claude/commands/trellis/check-frontend.md", "reason": "Frontend check spec"}'
   fi
 }
@@ -120,12 +120,12 @@ ensure_tasks_dir() {
   local tasks_dir=$(get_tasks_dir)
   local archive_dir="$tasks_dir/archive"
 
-  if [[ ! -d "$tasks_dir" ]]; then
+  if [[ ! -d $tasks_dir ]]; then
     mkdir -p "$tasks_dir"
     echo -e "${GREEN}Created tasks directory: $tasks_dir${NC}" >&2
   fi
 
-  if [[ ! -d "$archive_dir" ]]; then
+  if [[ ! -d $archive_dir ]]; then
     mkdir -p "$archive_dir"
   fi
 }
@@ -144,46 +144,46 @@ cmd_create() {
   # Parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --assignee|-a)
-        assignee="$2"
-        shift 2
-        ;;
-      --priority|-p)
-        priority="$2"
-        shift 2
-        ;;
-      --slug|-s)
-        slug="$2"
-        shift 2
-        ;;
-      --description|-d)
-        description="$2"
-        shift 2
-        ;;
-      -*)
-        echo -e "${RED}Error: Unknown option $1${NC}" >&2
-        exit 1
-        ;;
-      *)
-        if [[ -z "$title" ]]; then
-          title="$1"
-        fi
-        shift
-        ;;
+    --assignee | -a)
+      assignee="$2"
+      shift 2
+      ;;
+    --priority | -p)
+      priority="$2"
+      shift 2
+      ;;
+    --slug | -s)
+      slug="$2"
+      shift 2
+      ;;
+    --description | -d)
+      description="$2"
+      shift 2
+      ;;
+    -*)
+      echo -e "${RED}Error: Unknown option $1${NC}" >&2
+      exit 1
+      ;;
+    *)
+      if [[ -z $title ]]; then
+        title="$1"
+      fi
+      shift
+      ;;
     esac
   done
 
   # Validate required fields
-  if [[ -z "$title" ]]; then
+  if [[ -z $title ]]; then
     echo -e "${RED}Error: title is required${NC}" >&2
     echo "Usage: $0 create <title> [--assignee <dev>] [--priority P0|P1|P2|P3] [--slug <slug>]" >&2
     exit 1
   fi
 
   # Default assignee to current developer
-  if [[ -z "$assignee" ]]; then
+  if [[ -z $assignee ]]; then
     assignee=$(get_developer "$REPO_ROOT")
-    if [[ -z "$assignee" ]]; then
+    if [[ -z $assignee ]]; then
       echo -e "${RED}Error: No developer set. Run init-developer.sh first or use --assignee${NC}" >&2
       exit 1
     fi
@@ -193,17 +193,17 @@ cmd_create() {
 
   # Get current developer as creator
   local creator=$(get_developer "$REPO_ROOT")
-  if [[ -z "$creator" ]]; then
+  if [[ -z $creator ]]; then
     creator="$assignee"
   fi
 
   # Generate slug if not provided
-  if [[ -z "$slug" ]]; then
+  if [[ -z $slug ]]; then
     slug=$(_slugify "$title")
   fi
 
   # Validate slug
-  if [[ -z "$slug" ]]; then
+  if [[ -z $slug ]]; then
     echo -e "${RED}Error: could not generate slug from title${NC}" >&2
     exit 1
   fi
@@ -215,7 +215,7 @@ cmd_create() {
   local task_dir="$tasks_dir/$dir_name"
   local task_json="$task_dir/$FILE_TASK_JSON"
 
-  if [[ -d "$task_dir" ]]; then
+  if [[ -d $task_dir ]]; then
     echo -e "${YELLOW}Warning: Task directory already exists: $dir_name${NC}" >&2
   else
     mkdir -p "$task_dir"
@@ -223,7 +223,7 @@ cmd_create() {
 
   local today=$(date +%Y-%m-%d)
 
-  cat > "$task_json" << EOF
+  cat >"$task_json" <<EOF
 {
   "id": "$slug",
   "name": "$slug",
@@ -275,7 +275,7 @@ cmd_init_context() {
   local target_dir="$1"
   local dev_type="$2"
 
-  if [[ -z "$target_dir" ]] || [[ -z "$dev_type" ]]; then
+  if [[ -z $target_dir ]] || [[ -z $dev_type ]]; then
     echo -e "${RED}Error: Missing arguments${NC}"
     echo "Usage: $0 init-context <task-dir> <dev_type>"
     echo "  dev_type: backend | frontend | fullstack | test | docs"
@@ -283,11 +283,11 @@ cmd_init_context() {
   fi
 
   # Support relative paths
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
-  if [[ ! -d "$target_dir" ]]; then
+  if [[ ! -d $target_dir ]]; then
     echo -e "${RED}Error: Directory not found: $target_dir${NC}"
     exit 1
   fi
@@ -303,27 +303,27 @@ cmd_init_context() {
   {
     get_implement_base
     case "$dev_type" in
-      backend|test) get_implement_backend ;;
-      frontend) get_implement_frontend ;;
-      fullstack)
-        get_implement_backend
-        get_implement_frontend
-        ;;
+    backend | test) get_implement_backend ;;
+    frontend) get_implement_frontend ;;
+    fullstack)
+      get_implement_backend
+      get_implement_frontend
+      ;;
     esac
-  } > "$implement_file"
-  echo -e "  ${GREEN}✓${NC} $(wc -l < "$implement_file" | tr -d ' ') entries"
+  } >"$implement_file"
+  echo -e "  ${GREEN}✓${NC} $(wc -l <"$implement_file" | tr -d ' ') entries"
 
   # check.jsonl
   echo -e "${CYAN}Creating check.jsonl...${NC}"
   local check_file="$target_dir/check.jsonl"
-  get_check_context "$dev_type" > "$check_file"
-  echo -e "  ${GREEN}✓${NC} $(wc -l < "$check_file" | tr -d ' ') entries"
+  get_check_context "$dev_type" >"$check_file"
+  echo -e "  ${GREEN}✓${NC} $(wc -l <"$check_file" | tr -d ' ') entries"
 
   # debug.jsonl
   echo -e "${CYAN}Creating debug.jsonl...${NC}"
   local debug_file="$target_dir/debug.jsonl"
-  get_debug_context "$dev_type" > "$debug_file"
-  echo -e "  ${GREEN}✓${NC} $(wc -l < "$debug_file" | tr -d ' ') entries"
+  get_debug_context "$dev_type" >"$debug_file"
+  echo -e "  ${GREEN}✓${NC} $(wc -l <"$debug_file" | tr -d ' ') entries"
 
   echo ""
   echo -e "${GREEN}✓ All context files created${NC}"
@@ -343,7 +343,7 @@ cmd_add_context() {
   local path="$3"
   local reason="${4:-Added manually}"
 
-  if [[ -z "$target_dir" ]] || [[ -z "$jsonl_name" ]] || [[ -z "$path" ]]; then
+  if [[ -z $target_dir ]] || [[ -z $jsonl_name ]] || [[ -z $path ]]; then
     echo -e "${RED}Error: Missing arguments${NC}"
     echo "Usage: $0 add-context <task-dir> <jsonl-file> <path> [reason]"
     echo "  jsonl-file: implement | check | debug (or full filename)"
@@ -351,12 +351,12 @@ cmd_add_context() {
   fi
 
   # Support relative paths
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
   # Support shorthand
-  if [[ "$jsonl_name" != *.jsonl ]]; then
+  if [[ $jsonl_name != *.jsonl ]]; then
     jsonl_name="${jsonl_name}.jsonl"
   fi
 
@@ -364,25 +364,25 @@ cmd_add_context() {
   local full_path="$REPO_ROOT/$path"
   local entry_type="file"
 
-  if [[ -d "$full_path" ]]; then
+  if [[ -d $full_path ]]; then
     entry_type="directory"
-    [[ "$path" != */ ]] && path="$path/"
-  elif [[ ! -f "$full_path" ]]; then
+    [[ $path != */ ]] && path="$path/"
+  elif [[ ! -f $full_path ]]; then
     echo -e "${RED}Error: Path not found: $path${NC}"
     exit 1
   fi
 
   # Check if already exists
-  if [[ -f "$jsonl_file" ]] && grep -q "\"$path\"" "$jsonl_file" 2>/dev/null; then
+  if [[ -f $jsonl_file ]] && grep -q "\"$path\"" "$jsonl_file" 2>/dev/null; then
     echo -e "${YELLOW}Warning: Entry already exists for $path${NC}"
     exit 0
   fi
 
   # Add entry
-  if [[ "$entry_type" == "directory" ]]; then
-    echo "{\"file\": \"$path\", \"type\": \"directory\", \"reason\": \"$reason\"}" >> "$jsonl_file"
+  if [[ $entry_type == "directory" ]]; then
+    echo "{\"file\": \"$path\", \"type\": \"directory\", \"reason\": \"$reason\"}" >>"$jsonl_file"
   else
-    echo "{\"file\": \"$path\", \"reason\": \"$reason\"}" >> "$jsonl_file"
+    echo "{\"file\": \"$path\", \"reason\": \"$reason\"}" >>"$jsonl_file"
   fi
 
   echo -e "${GREEN}Added $entry_type: $path${NC}"
@@ -398,16 +398,16 @@ validate_jsonl() {
   local errors=0
   local line_num=0
 
-  if [[ ! -f "$jsonl_file" ]]; then
+  if [[ ! -f $jsonl_file ]]; then
     echo -e "  ${YELLOW}$file_name: not found (skipped)${NC}"
     return 0
   fi
 
-  while IFS= read -r line || [[ -n "$line" ]]; do
+  while IFS= read -r line || [[ -n $line ]]; do
     line_num=$((line_num + 1))
-    [[ -z "$line" ]] && continue
+    [[ -z $line ]] && continue
 
-    if ! echo "$line" | jq -e . > /dev/null 2>&1; then
+    if ! echo "$line" | jq -e . >/dev/null 2>&1; then
       echo -e "  ${RED}$file_name:$line_num: Invalid JSON${NC}"
       errors=$((errors + 1))
       continue
@@ -416,25 +416,25 @@ validate_jsonl() {
     local file_path=$(echo "$line" | jq -r '.file // empty')
     local entry_type=$(echo "$line" | jq -r '.type // "file"')
 
-    if [[ -z "$file_path" ]]; then
+    if [[ -z $file_path ]]; then
       echo -e "  ${RED}$file_name:$line_num: Missing 'file' field${NC}"
       errors=$((errors + 1))
       continue
     fi
 
     local full_path="$REPO_ROOT/$file_path"
-    if [[ "$entry_type" == "directory" ]]; then
-      if [[ ! -d "$full_path" ]]; then
+    if [[ $entry_type == "directory" ]]; then
+      if [[ ! -d $full_path ]]; then
         echo -e "  ${RED}$file_name:$line_num: Directory not found: $file_path${NC}"
         errors=$((errors + 1))
       fi
     else
-      if [[ ! -f "$full_path" ]]; then
+      if [[ ! -f $full_path ]]; then
         echo -e "  ${RED}$file_name:$line_num: File not found: $file_path${NC}"
         errors=$((errors + 1))
       fi
     fi
-  done < "$jsonl_file"
+  done <"$jsonl_file"
 
   if [[ $errors -eq 0 ]]; then
     echo -e "  ${GREEN}$file_name: ✓ ($line_num entries)${NC}"
@@ -448,12 +448,12 @@ validate_jsonl() {
 cmd_validate() {
   local target_dir="$1"
 
-  if [[ -z "$target_dir" ]]; then
+  if [[ -z $target_dir ]]; then
     echo -e "${RED}Error: task directory required${NC}"
     exit 1
   fi
 
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -483,12 +483,12 @@ cmd_validate() {
 cmd_list_context() {
   local target_dir="$1"
 
-  if [[ -z "$target_dir" ]]; then
+  if [[ -z $target_dir ]]; then
     echo -e "${RED}Error: task directory required${NC}"
     exit 1
   fi
 
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
@@ -497,26 +497,26 @@ cmd_list_context() {
 
   for jsonl_file in "$target_dir"/{implement,check,debug}.jsonl; do
     local file_name=$(basename "$jsonl_file")
-    [[ ! -f "$jsonl_file" ]] && continue
+    [[ ! -f $jsonl_file ]] && continue
 
     echo -e "${CYAN}[$file_name]${NC}"
 
     local count=0
-    while IFS= read -r line || [[ -n "$line" ]]; do
-      [[ -z "$line" ]] && continue
+    while IFS= read -r line || [[ -n $line ]]; do
+      [[ -z $line ]] && continue
 
       local file_path=$(echo "$line" | jq -r '.file // "?"')
       local entry_type=$(echo "$line" | jq -r '.type // "file"')
       local reason=$(echo "$line" | jq -r '.reason // "-"')
       count=$((count + 1))
 
-      if [[ "$entry_type" == "directory" ]]; then
+      if [[ $entry_type == "directory" ]]; then
         echo -e "  ${GREEN}$count.${NC} [DIR] $file_path"
       else
         echo -e "  ${GREEN}$count.${NC} $file_path"
       fi
       echo -e "     ${YELLOW}→${NC} $reason"
-    done < "$jsonl_file"
+    done <"$jsonl_file"
 
     echo ""
   done
@@ -529,13 +529,13 @@ cmd_list_context() {
 cmd_start() {
   local task_dir="$1"
 
-  if [[ -z "$task_dir" ]]; then
+  if [[ -z $task_dir ]]; then
     echo -e "${RED}Error: task directory required${NC}"
     exit 1
   fi
 
   # Convert to relative path
-  if [[ "$task_dir" = /* ]]; then
+  if [[ $task_dir == /* ]]; then
     task_dir="${task_dir#$REPO_ROOT/}"
   fi
 
@@ -554,7 +554,7 @@ cmd_start() {
 cmd_finish() {
   local current=$(get_current_task)
 
-  if [[ -z "$current" ]]; then
+  if [[ -z $current ]]; then
     echo -e "${YELLOW}No current task set${NC}"
     exit 0
   fi
@@ -570,7 +570,7 @@ cmd_finish() {
 cmd_archive() {
   local task_name="$1"
 
-  if [[ -z "$task_name" ]]; then
+  if [[ -z $task_name ]]; then
     echo -e "${RED}Error: Task name is required${NC}" >&2
     echo "Usage: $0 archive <task-name>" >&2
     exit 1
@@ -581,7 +581,7 @@ cmd_archive() {
   # Find task directory using common function
   local task_dir=$(find_task_by_name "$task_name" "$tasks_dir")
 
-  if [[ -z "$task_dir" ]] || [[ ! -d "$task_dir" ]]; then
+  if [[ -z $task_dir ]] || [[ ! -d $task_dir ]]; then
     echo -e "${RED}Error: Task not found: $task_name${NC}" >&2
     echo "Active tasks:" >&2
     cmd_list >&2
@@ -593,15 +593,15 @@ cmd_archive() {
 
   # Update status before archiving
   local today=$(date +%Y-%m-%d)
-  if [[ -f "$task_json" ]] && command -v jq &> /dev/null; then
+  if [[ -f $task_json ]] && command -v jq &>/dev/null; then
     local temp_file=$(mktemp)
-    jq --arg date "$today" '.status = "completed" | .completedAt = $date' "$task_json" > "$temp_file"
+    jq --arg date "$today" '.status = "completed" | .completedAt = $date' "$task_json" >"$temp_file"
     mv "$temp_file" "$task_json"
   fi
 
   # Clear if current task
   local current=$(get_current_task)
-  if [[ "$current" == *"$dir_name"* ]]; then
+  if [[ $current == *"$dir_name"* ]]; then
     clear_current_task
   fi
 
@@ -611,11 +611,11 @@ cmd_archive() {
 
   echo "$result" | while IFS= read -r line; do
     case "$line" in
-      archived_to:*)
-        archive_dest="${line#archived_to:}"
-        local year_month=$(basename "$(dirname "$archive_dest")")
-        echo -e "${GREEN}Archived: $dir_name -> archive/$year_month/${NC}" >&2
-        ;;
+    archived_to:*)
+      archive_dest="${line#archived_to:}"
+      local year_month=$(basename "$(dirname "$archive_dest")")
+      echo -e "${GREEN}Archived: $dir_name -> archive/$year_month/${NC}" >&2
+      ;;
     esac
   done
 
@@ -635,17 +635,17 @@ cmd_list() {
   # Parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --mine|-m)
-        filter_mine=true
-        shift
-        ;;
-      --status|-s)
-        filter_status="$2"
-        shift 2
-        ;;
-      *)
-        shift
-        ;;
+    --mine | -m)
+      filter_mine=true
+      shift
+      ;;
+    --status | -s)
+      filter_status="$2"
+      shift 2
+      ;;
+    *)
+      shift
+      ;;
     esac
   done
 
@@ -653,8 +653,8 @@ cmd_list() {
   local current_task=$(get_current_task)
   local developer=$(get_developer "$REPO_ROOT")
 
-  if [[ "$filter_mine" == "true" ]]; then
-    if [[ -z "$developer" ]]; then
+  if [[ $filter_mine == "true" ]]; then
+    if [[ -z $developer ]]; then
       echo -e "${RED}Error: No developer set. Run init-developer.sh first${NC}" >&2
       exit 1
     fi
@@ -667,34 +667,34 @@ cmd_list() {
   local count=0
 
   for d in "$tasks_dir"/*/; do
-    if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
+    if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
       local dir_name=$(basename "$d")
       local task_json="$d/$FILE_TASK_JSON"
       local status="unknown"
       local assignee="-"
       local relative_path="$DIR_WORKFLOW/$DIR_TASKS/$dir_name"
 
-      if [[ -f "$task_json" ]] && command -v jq &> /dev/null; then
+      if [[ -f $task_json ]] && command -v jq &>/dev/null; then
         status=$(jq -r '.status // "unknown"' "$task_json")
         assignee=$(jq -r '.assignee // "-"' "$task_json")
       fi
 
       # Apply --mine filter
-      if [[ "$filter_mine" == "true" ]] && [[ "$assignee" != "$developer" ]]; then
+      if [[ $filter_mine == "true" ]] && [[ $assignee != "$developer" ]]; then
         continue
       fi
 
       # Apply --status filter
-      if [[ -n "$filter_status" ]] && [[ "$status" != "$filter_status" ]]; then
+      if [[ -n $filter_status ]] && [[ $status != "$filter_status" ]]; then
         continue
       fi
 
       local marker=""
-      if [[ "$relative_path" == "$current_task" ]]; then
+      if [[ $relative_path == "$current_task" ]]; then
         marker=" ${GREEN}<- current${NC}"
       fi
 
-      if [[ "$filter_mine" == "true" ]]; then
+      if [[ $filter_mine == "true" ]]; then
         echo -e "  - $dir_name/ ($status)$marker"
       else
         echo -e "  - $dir_name/ ($status) [${CYAN}$assignee${NC}]$marker"
@@ -704,7 +704,7 @@ cmd_list() {
   done
 
   if [[ $count -eq 0 ]]; then
-    if [[ "$filter_mine" == "true" ]]; then
+    if [[ $filter_mine == "true" ]]; then
       echo "  (no tasks assigned to you)"
     else
       echo "  (no active tasks)"
@@ -728,12 +728,12 @@ cmd_list_archive() {
   echo -e "${BLUE}Archived tasks:${NC}"
   echo ""
 
-  if [[ -n "$month" ]]; then
+  if [[ -n $month ]]; then
     local month_dir="$archive_dir/$month"
-    if [[ -d "$month_dir" ]]; then
+    if [[ -d $month_dir ]]; then
       echo "[$month]"
       for d in "$month_dir"/*/; do
-        if [[ -d "$d" ]]; then
+        if [[ -d $d ]]; then
           echo "  - $(basename "$d")/"
         fi
       done
@@ -742,7 +742,7 @@ cmd_list_archive() {
     fi
   else
     for month_dir in "$archive_dir"/*/; do
-      if [[ -d "$month_dir" ]]; then
+      if [[ -d $month_dir ]]; then
         local month_name=$(basename "$month_dir")
         local count=$(find "$month_dir" -maxdepth 1 -type d ! -name "$(basename "$month_dir")" | wc -l | tr -d ' ')
         echo "[$month_name] - $count task(s)"
@@ -759,7 +759,7 @@ cmd_set_branch() {
   local target_dir="$1"
   local branch="$2"
 
-  if [[ -z "$target_dir" ]] || [[ -z "$branch" ]]; then
+  if [[ -z $target_dir ]] || [[ -z $branch ]]; then
     echo -e "${RED}Error: Missing arguments${NC}"
     echo "Usage: $0 set-branch <task-dir> <branch-name>"
     echo "Example: $0 set-branch <dir> task/my-task"
@@ -767,18 +767,18 @@ cmd_set_branch() {
   fi
 
   # Support relative paths
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
   local task_json="$target_dir/$FILE_TASK_JSON"
-  if [[ ! -f "$task_json" ]]; then
+  if [[ ! -f $task_json ]]; then
     echo -e "${RED}Error: task.json not found at $target_dir${NC}"
     exit 1
   fi
 
   # Update branch field
-  jq --arg branch "$branch" '.branch = $branch' "$task_json" > "${task_json}.tmp"
+  jq --arg branch "$branch" '.branch = $branch' "$task_json" >"${task_json}.tmp"
   mv "${task_json}.tmp" "$task_json"
 
   echo -e "${GREEN}✓ Branch set to: $branch${NC}"
@@ -795,7 +795,7 @@ cmd_set_scope() {
   local target_dir="$1"
   local scope="$2"
 
-  if [[ -z "$target_dir" ]] || [[ -z "$scope" ]]; then
+  if [[ -z $target_dir ]] || [[ -z $scope ]]; then
     echo -e "${RED}Error: Missing arguments${NC}"
     echo "Usage: $0 set-scope <task-dir> <scope>"
     echo "Example: $0 set-scope <dir> api"
@@ -803,18 +803,18 @@ cmd_set_scope() {
   fi
 
   # Support relative paths
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
   local task_json="$target_dir/$FILE_TASK_JSON"
-  if [[ ! -f "$task_json" ]]; then
+  if [[ ! -f $task_json ]]; then
     echo -e "${RED}Error: task.json not found at $target_dir${NC}"
     exit 1
   fi
 
   # Update scope field
-  jq --arg scope "$scope" '.scope = $scope' "$task_json" > "${task_json}.tmp"
+  jq --arg scope "$scope" '.scope = $scope' "$task_json" >"${task_json}.tmp"
   mv "${task_json}.tmp" "$task_json"
 
   echo -e "${GREEN}✓ Scope set to: $scope${NC}"
@@ -831,23 +831,23 @@ cmd_create_pr() {
   # Parse arguments
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --dry-run)
-        dry_run=true
-        shift
-        ;;
-      *)
-        if [[ -z "$target_dir" ]]; then
-          target_dir="$1"
-        fi
-        shift
-        ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    *)
+      if [[ -z $target_dir ]]; then
+        target_dir="$1"
+      fi
+      shift
+      ;;
     esac
   done
 
   # Get task directory
-  if [[ -z "$target_dir" ]]; then
+  if [[ -z $target_dir ]]; then
     target_dir=$(get_current_task)
-    if [[ -z "$target_dir" ]]; then
+    if [[ -z $target_dir ]]; then
       echo -e "${RED}Error: No task directory specified and no current task set${NC}"
       echo "Usage: $0 create-pr [task-dir] [--dry-run]"
       exit 1
@@ -855,18 +855,18 @@ cmd_create_pr() {
   fi
 
   # Support relative paths
-  if [[ ! "$target_dir" = /* ]]; then
+  if [[ ! $target_dir == /* ]]; then
     target_dir="$REPO_ROOT/$target_dir"
   fi
 
   local task_json="$target_dir/$FILE_TASK_JSON"
-  if [[ ! -f "$task_json" ]]; then
+  if [[ ! -f $task_json ]]; then
     echo -e "${RED}Error: task.json not found at $target_dir${NC}"
     exit 1
   fi
 
   echo -e "${BLUE}=== Create PR ===${NC}"
-  if [[ "$dry_run" == "true" ]]; then
+  if [[ $dry_run == "true" ]]; then
     echo -e "${YELLOW}[DRY-RUN MODE] No actual changes will be made${NC}"
   fi
   echo ""
@@ -880,12 +880,12 @@ cmd_create_pr() {
   # Map dev_type to commit prefix
   local commit_prefix
   case "$dev_type" in
-    feature|frontend|backend|fullstack) commit_prefix="feat" ;;
-    bugfix|fix) commit_prefix="fix" ;;
-    refactor) commit_prefix="refactor" ;;
-    docs) commit_prefix="docs" ;;
-    test) commit_prefix="test" ;;
-    *) commit_prefix="feat" ;;
+  feature | frontend | backend | fullstack) commit_prefix="feat" ;;
+  bugfix | fix) commit_prefix="fix" ;;
+  refactor) commit_prefix="refactor" ;;
+  docs) commit_prefix="docs" ;;
+  test) commit_prefix="test" ;;
+  *) commit_prefix="feat" ;;
   esac
 
   echo -e "Task: ${task_name}"
@@ -913,9 +913,9 @@ cmd_create_pr() {
 
     # Check for unpushed commits
     local unpushed=$(git log "origin/${current_branch}..HEAD" --oneline 2>/dev/null | wc -l | tr -d ' ' || echo "0")
-    if [[ "$unpushed" -eq 0 ]] 2>/dev/null; then
+    if [[ $unpushed -eq 0 ]] 2>/dev/null; then
       # In dry-run, also reset the staging
-      if [[ "$dry_run" == "true" ]]; then
+      if [[ $dry_run == "true" ]]; then
         git reset HEAD >/dev/null 2>&1 || true
       fi
       echo -e "${RED}No changes to create PR${NC}"
@@ -927,7 +927,7 @@ cmd_create_pr() {
     echo -e "${YELLOW}Committing changes...${NC}"
     local commit_msg="${commit_prefix}(${scope}): ${task_name}"
 
-    if [[ "$dry_run" == "true" ]]; then
+    if [[ $dry_run == "true" ]]; then
       echo -e "[DRY-RUN] Would commit with message: ${commit_msg}"
       echo -e "[DRY-RUN] Staged files:"
       git diff --cached --name-only | sed 's/^/  - /'
@@ -939,7 +939,7 @@ cmd_create_pr() {
 
   # Push to remote
   echo -e "${YELLOW}Pushing to remote...${NC}"
-  if [[ "$dry_run" == "true" ]]; then
+  if [[ $dry_run == "true" ]]; then
     echo -e "[DRY-RUN] Would push to: origin/${current_branch}"
   else
     git push -u origin "$current_branch"
@@ -951,7 +951,7 @@ cmd_create_pr() {
   local pr_title="${commit_prefix}(${scope}): ${task_name}"
   local pr_url=""
 
-  if [[ "$dry_run" == "true" ]]; then
+  if [[ $dry_run == "true" ]]; then
     echo -e "[DRY-RUN] Would create PR:"
     echo -e "  Title: ${pr_title}"
     echo -e "  Base:  ${base_branch}"
@@ -964,7 +964,7 @@ cmd_create_pr() {
     # Check if PR already exists
     local existing_pr=$(gh pr list --head "$current_branch" --base "$base_branch" --json url --jq '.[0].url' 2>/dev/null || echo "")
 
-    if [[ -n "$existing_pr" ]]; then
+    if [[ -n $existing_pr ]]; then
       echo -e "${YELLOW}PR already exists: ${existing_pr}${NC}"
       pr_url="$existing_pr"
     else
@@ -988,7 +988,7 @@ cmd_create_pr() {
 
   # Update task.json
   echo -e "${YELLOW}Updating task status...${NC}"
-  if [[ "$dry_run" == "true" ]]; then
+  if [[ $dry_run == "true" ]]; then
     echo -e "[DRY-RUN] Would update task.json:"
     echo -e "  status: review"
     echo -e "  pr_url: ${pr_url}"
@@ -997,13 +997,13 @@ cmd_create_pr() {
     # Find the phase number for create-pr action
     local create_pr_phase=$(jq -r '.next_action[] | select(.action == "create-pr") | .phase // 4' "$task_json")
     jq --arg url "$pr_url" --argjson phase "$create_pr_phase" \
-      '.status = "review" | .pr_url = $url | .current_phase = $phase' "$task_json" > "${task_json}.tmp"
+      '.status = "review" | .pr_url = $url | .current_phase = $phase' "$task_json" >"${task_json}.tmp"
     mv "${task_json}.tmp" "$task_json"
     echo -e "${GREEN}Task status updated to 'review', phase ${create_pr_phase}${NC}"
   fi
 
   # In dry-run, reset the staging area
-  if [[ "$dry_run" == "true" ]]; then
+  if [[ $dry_run == "true" ]]; then
     git reset HEAD >/dev/null 2>&1 || true
   fi
 
@@ -1019,7 +1019,7 @@ cmd_create_pr() {
 # =============================================================================
 
 show_usage() {
-  cat << EOF
+  cat <<EOF
 Task Management Script for Multi-Agent Pipeline
 
 Usage:
@@ -1065,54 +1065,54 @@ EOF
 # =============================================================================
 
 case "${1:-}" in
-  create)
-    shift
-    cmd_create "$@"
-    ;;
-  init-context)
-    cmd_init_context "$2" "$3"
-    ;;
-  add-context)
-    cmd_add_context "$2" "$3" "$4" "$5"
-    ;;
-  validate)
-    cmd_validate "$2"
-    ;;
-  list-context)
-    cmd_list_context "$2"
-    ;;
-  start)
-    cmd_start "$2"
-    ;;
-  finish)
-    cmd_finish
-    ;;
-  set-branch)
-    cmd_set_branch "$2" "$3"
-    ;;
-  set-scope)
-    cmd_set_scope "$2" "$3"
-    ;;
-  create-pr)
-    # Delegate to multi-agent/create-pr.sh
-    shift
-    "$SCRIPT_DIR/multi-agent/create-pr.sh" "$@"
-    ;;
-  archive)
-    cmd_archive "$2"
-    ;;
-  list)
-    shift
-    cmd_list "$@"
-    ;;
-  list-archive)
-    cmd_list_archive "$2"
-    ;;
-  -h|--help|help)
-    show_usage
-    ;;
-  *)
-    show_usage
-    exit 1
-    ;;
+create)
+  shift
+  cmd_create "$@"
+  ;;
+init-context)
+  cmd_init_context "$2" "$3"
+  ;;
+add-context)
+  cmd_add_context "$2" "$3" "$4" "$5"
+  ;;
+validate)
+  cmd_validate "$2"
+  ;;
+list-context)
+  cmd_list_context "$2"
+  ;;
+start)
+  cmd_start "$2"
+  ;;
+finish)
+  cmd_finish
+  ;;
+set-branch)
+  cmd_set_branch "$2" "$3"
+  ;;
+set-scope)
+  cmd_set_scope "$2" "$3"
+  ;;
+create-pr)
+  # Delegate to multi-agent/create-pr.sh
+  shift
+  "$SCRIPT_DIR/multi-agent/create-pr.sh" "$@"
+  ;;
+archive)
+  cmd_archive "$2"
+  ;;
+list)
+  shift
+  cmd_list "$@"
+  ;;
+list-archive)
+  cmd_list_archive "$2"
+  ;;
+-h | --help | help)
+  show_usage
+  ;;
+*)
+  show_usage
+  exit 1
+  ;;
 esac

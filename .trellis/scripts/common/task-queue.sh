@@ -27,14 +27,14 @@ list_tasks_by_status() {
 
   local tasks_dir=$(get_tasks_dir "$repo_root")
 
-  if [[ ! -d "$tasks_dir" ]]; then
+  if [[ ! -d $tasks_dir ]]; then
     return 0
   fi
 
   for d in "$tasks_dir"/*/; do
-    if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
+    if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
       local task_json="$d/$FILE_TASK_JSON"
-      if [[ -f "$task_json" ]]; then
+      if [[ -f $task_json ]]; then
         local id=$(jq -r '.id' "$task_json")
         local title=$(jq -r '.title // .name' "$task_json")
         local priority=$(jq -r '.priority // "P2"' "$task_json")
@@ -42,7 +42,7 @@ list_tasks_by_status() {
         local assignee=$(jq -r '.assignee // "-"' "$task_json")
 
         # Apply filter
-        if [[ -n "$filter_status" ]] && [[ "$status" != "$filter_status" ]]; then
+        if [[ -n $filter_status ]] && [[ $status != "$filter_status" ]]; then
           continue
         fi
 
@@ -67,14 +67,14 @@ list_tasks_by_assignee() {
 
   local tasks_dir=$(get_tasks_dir "$repo_root")
 
-  if [[ ! -d "$tasks_dir" ]]; then
+  if [[ ! -d $tasks_dir ]]; then
     return 0
   fi
 
   for d in "$tasks_dir"/*/; do
-    if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
+    if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
       local task_json="$d/$FILE_TASK_JSON"
-      if [[ -f "$task_json" ]]; then
+      if [[ -f $task_json ]]; then
         local id=$(jq -r '.id' "$task_json")
         local title=$(jq -r '.title // .name' "$task_json")
         local priority=$(jq -r '.priority // "P2"' "$task_json")
@@ -82,12 +82,12 @@ list_tasks_by_assignee() {
         local task_assignee=$(jq -r '.assignee // "-"' "$task_json")
 
         # Apply assignee filter
-        if [[ "$task_assignee" != "$assignee" ]]; then
+        if [[ $task_assignee != "$assignee" ]]; then
           continue
         fi
 
         # Apply status filter
-        if [[ -n "$filter_status" ]] && [[ "$status" != "$filter_status" ]]; then
+        if [[ -n $filter_status ]] && [[ $status != "$filter_status" ]]; then
           continue
         fi
 
@@ -104,7 +104,7 @@ list_my_tasks() {
   local repo_root="${2:-$(get_repo_root)}"
   local developer=$(get_developer "$repo_root")
 
-  if [[ -z "$developer" ]]; then
+  if [[ -z $developer ]]; then
     echo "Error: Developer not set" >&2
     return 1
   fi
@@ -120,17 +120,17 @@ get_task_stats() {
 
   local p0=0 p1=0 p2=0 p3=0 total=0
 
-  if [[ -d "$tasks_dir" ]]; then
+  if [[ -d $tasks_dir ]]; then
     for d in "$tasks_dir"/*/; do
-      if [[ -d "$d" ]] && [[ "$(basename "$d")" != "archive" ]]; then
+      if [[ -d $d ]] && [[ "$(basename "$d")" != "archive" ]]; then
         local task_json="$d/$FILE_TASK_JSON"
-        if [[ -f "$task_json" ]]; then
+        if [[ -f $task_json ]]; then
           local priority=$(jq -r '.priority // "P2"' "$task_json" 2>/dev/null)
           case "$priority" in
-            P0) ((p0++)) ;;
-            P1) ((p1++)) ;;
-            P2) ((p2++)) ;;
-            P3) ((p3++)) ;;
+          P0) ((p0++)) ;;
+          P1) ((p1++)) ;;
+          P2) ((p2++)) ;;
+          P3) ((p3++)) ;;
           esac
           ((total++))
         fi

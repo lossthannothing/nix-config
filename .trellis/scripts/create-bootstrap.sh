@@ -38,12 +38,11 @@ PROJECT_TYPE="${1:-fullstack}"
 
 # Validate project type
 case "$PROJECT_TYPE" in
-  frontend|backend|fullstack)
-    ;;
-  *)
-    echo -e "${YELLOW}Unknown project type: $PROJECT_TYPE, defaulting to fullstack${NC}"
-    PROJECT_TYPE="fullstack"
-    ;;
+frontend | backend | fullstack) ;;
+*)
+  echo -e "${YELLOW}Unknown project type: $PROJECT_TYPE, defaulting to fullstack${NC}"
+  PROJECT_TYPE="fullstack"
+  ;;
 esac
 
 # =============================================================================
@@ -51,7 +50,7 @@ esac
 # =============================================================================
 
 write_prd_header() {
-  cat << 'EOF'
+  cat <<'EOF'
 # Bootstrap: Fill Project Development Guidelines
 
 ## Purpose
@@ -72,7 +71,7 @@ EOF
 }
 
 write_prd_backend_section() {
-  cat << 'EOF'
+  cat <<'EOF'
 
 ### Backend Guidelines
 
@@ -87,7 +86,7 @@ EOF
 }
 
 write_prd_frontend_section() {
-  cat << 'EOF'
+  cat <<'EOF'
 
 ### Frontend Guidelines
 
@@ -103,7 +102,7 @@ EOF
 }
 
 write_prd_footer() {
-  cat << 'EOF'
+  cat <<'EOF'
 
 ### Thinking Guides (Optional)
 
@@ -174,20 +173,20 @@ write_prd() {
     write_prd_header
 
     case "$project_type" in
-      frontend)
-        write_prd_frontend_section
-        ;;
-      backend)
-        write_prd_backend_section
-        ;;
-      fullstack)
-        write_prd_backend_section
-        write_prd_frontend_section
-        ;;
+    frontend)
+      write_prd_frontend_section
+      ;;
+    backend)
+      write_prd_backend_section
+      ;;
+    fullstack)
+      write_prd_backend_section
+      write_prd_frontend_section
+      ;;
     esac
 
     write_prd_footer
-  } > "$dir/prd.md"
+  } >"$dir/prd.md"
 }
 
 # =============================================================================
@@ -205,38 +204,38 @@ write_task_json() {
   local related_files
 
   case "$project_type" in
-    frontend)
-      subtasks='[
+  frontend)
+    subtasks='[
     {"name": "Fill frontend guidelines", "status": "pending"},
     {"name": "Add code examples", "status": "pending"}
   ]'
-      related_files='[
+    related_files='[
     ".trellis/spec/frontend/"
   ]'
-      ;;
-    backend)
-      subtasks='[
+    ;;
+  backend)
+    subtasks='[
     {"name": "Fill backend guidelines", "status": "pending"},
     {"name": "Add code examples", "status": "pending"}
   ]'
-      related_files='[
+    related_files='[
     ".trellis/spec/backend/"
   ]'
-      ;;
-    fullstack)
-      subtasks='[
+    ;;
+  fullstack)
+    subtasks='[
     {"name": "Fill backend guidelines", "status": "pending"},
     {"name": "Fill frontend guidelines", "status": "pending"},
     {"name": "Add code examples", "status": "pending"}
   ]'
-      related_files='[
+    related_files='[
     ".trellis/spec/backend/",
     ".trellis/spec/frontend/"
   ]'
-      ;;
+    ;;
   esac
 
-  cat > "$dir/task.json" << EOF
+  cat >"$dir/task.json" <<EOF
 {
   "id": "$TASK_NAME",
   "name": "Bootstrap Guidelines",
@@ -265,7 +264,7 @@ main() {
   local developer=$(get_developer "$repo_root")
 
   # Check developer initialized
-  if [[ -z "$developer" ]]; then
+  if [[ -z $developer ]]; then
     echo -e "${RED}Error: Developer not initialized${NC}"
     echo "Run: ./$DIR_WORKFLOW/$DIR_SCRIPTS/init-developer.sh <your-name>"
     exit 1
@@ -276,7 +275,7 @@ main() {
   local relative_path="$DIR_WORKFLOW/$DIR_TASKS/$TASK_NAME"
 
   # Check if already exists
-  if [[ -d "$task_dir" ]]; then
+  if [[ -d $task_dir ]]; then
     echo -e "${YELLOW}Bootstrap task already exists: $relative_path${NC}"
     exit 0
   fi

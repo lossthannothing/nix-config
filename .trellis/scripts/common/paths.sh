@@ -38,7 +38,7 @@ get_repo_root() {
   # This handles nested git repos correctly (e.g., test project inside another repo)
   local current="$PWD"
 
-  while [[ "$current" != "/" ]]; do
+  while [[ $current != "/" ]]; do
     if [[ -d "$current/$DIR_WORKFLOW" ]]; then
       echo "$current"
       return
@@ -58,14 +58,14 @@ get_developer() {
   local repo_root="${1:-$(get_repo_root)}"
   local dev_file="$repo_root/$DIR_WORKFLOW/$FILE_DEVELOPER"
 
-  if [[ -f "$dev_file" ]]; then
+  if [[ -f $dev_file ]]; then
     grep "^name=" "$dev_file" 2>/dev/null | cut -d'=' -f2
   fi
 }
 
 check_developer() {
   local developer=$(get_developer "$1")
-  [[ -n "$developer" ]]
+  [[ -n $developer ]]
 }
 
 # =============================================================================
@@ -85,7 +85,7 @@ get_workspace_dir() {
   local repo_root="${1:-$(get_repo_root)}"
   local developer=$(get_developer "$repo_root")
 
-  if [[ -n "$developer" ]]; then
+  if [[ -n $developer ]]; then
     echo "$repo_root/$DIR_WORKFLOW/$DIR_WORKSPACE/$developer"
   fi
 }
@@ -98,7 +98,7 @@ get_active_journal_file() {
   local repo_root="${1:-$(get_repo_root)}"
   local workspace_dir=$(get_workspace_dir "$repo_root")
 
-  if [[ -z "$workspace_dir" ]] || [[ ! -d "$workspace_dir" ]]; then
+  if [[ -z $workspace_dir ]] || [[ ! -d $workspace_dir ]]; then
     echo ""
     return
   fi
@@ -106,24 +106,24 @@ get_active_journal_file() {
   local latest=""
   local highest=0
   for f in "$workspace_dir"/${FILE_JOURNAL_PREFIX}*.md; do
-    if [[ -f "$f" ]]; then
+    if [[ -f $f ]]; then
       local num=$(basename "$f" | sed "s/${FILE_JOURNAL_PREFIX}//" | sed 's/\.md//')
-      if [[ "$num" =~ ^[0-9]+$ ]] && [[ "$num" -gt "$highest" ]]; then
+      if [[ $num =~ ^[0-9]+$ ]] && [[ $num -gt $highest ]]; then
         highest=$num
         latest="$f"
       fi
     fi
   done
 
-  if [[ -n "$latest" ]]; then
+  if [[ -n $latest ]]; then
     echo "$latest"
   fi
 }
 
 count_lines() {
   local file="$1"
-  if [[ -f "$file" ]]; then
-    wc -l < "$file" | tr -d ' '
+  if [[ -f $file ]]; then
+    wc -l <"$file" | tr -d ' '
   else
     echo "0"
   fi
@@ -144,7 +144,7 @@ get_current_task() {
   local repo_root="${1:-$(get_repo_root)}"
   local current_file=$(_get_current_task_file "$repo_root")
 
-  if [[ -f "$current_file" ]]; then
+  if [[ -f $current_file ]]; then
     cat "$current_file" 2>/dev/null
   fi
 }
@@ -154,7 +154,7 @@ get_current_task_abs() {
   local repo_root="${1:-$(get_repo_root)}"
   local relative=$(get_current_task "$repo_root")
 
-  if [[ -n "$relative" ]]; then
+  if [[ -n $relative ]]; then
     echo "$repo_root/$relative"
   fi
 }
@@ -166,19 +166,19 @@ set_current_task() {
   local repo_root="${2:-$(get_repo_root)}"
   local current_file=$(_get_current_task_file "$repo_root")
 
-  if [[ -z "$task_path" ]]; then
+  if [[ -z $task_path ]]; then
     echo "Error: task path is required" >&2
     return 1
   fi
 
   # Verify task directory exists
   local full_path="$repo_root/$task_path"
-  if [[ ! -d "$full_path" ]]; then
+  if [[ ! -d $full_path ]]; then
     echo "Error: task directory not found: $task_path" >&2
     return 1
   fi
 
-  echo "$task_path" > "$current_file"
+  echo "$task_path" >"$current_file"
 }
 
 # Clear current task
@@ -186,7 +186,7 @@ clear_current_task() {
   local repo_root="${1:-$(get_repo_root)}"
   local current_file=$(_get_current_task_file "$repo_root")
 
-  if [[ -f "$current_file" ]]; then
+  if [[ -f $current_file ]]; then
     rm -f "$current_file"
   fi
 }
@@ -194,7 +194,7 @@ clear_current_task() {
 # Check if has current task
 has_current_task() {
   local current=$(get_current_task "$1")
-  [[ -n "$current" ]]
+  [[ -n $current ]]
 }
 
 # =============================================================================
