@@ -3,10 +3,7 @@
 # Git 和 GitHub CLI 配置
 topLevel: {
   # 统一接口规范：显式接收 _pkgs
-  flake.modules.homeManager.dev = {
-    config,
-    ...
-  }: {
+  flake.modules.homeManager.dev = {config, ...}: {
     programs.git = {
       enable = true;
       lfs.enable = true;
