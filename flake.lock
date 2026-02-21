@@ -1,22 +1,5 @@
 {
   "nodes": {
-    "dotfiles": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1770398914,
-        "narHash": "sha256-Vsl+dXA9+2t0uHa/5PJWFA3dMptu69CwIYZ/0ADv8Bg=",
-        "owner": "lossthannothing",
-        "repo": ".dotfiles",
-        "rev": "362a18c0565c1c5224f42de9898c58ab3d325b09",
-        "type": "github"
-      },
-      "original": {
-        "owner": "lossthannothing",
-        "ref": "master",
-        "repo": ".dotfiles",
-        "type": "github"
-      }
-    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -243,7 +226,6 @@
     },
     "root": {
       "inputs": {
-        "dotfiles": "dotfiles",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "import-tree": "import-tree",

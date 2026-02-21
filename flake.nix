@@ -28,11 +28,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    dotfiles = {
-      url = "github:lossthannothing/.dotfiles/master";
-      flake = false;
-    };
-
     # 新增：架构工具
     import-tree.url = "github:vic/import-tree";
 

@@ -5,7 +5,6 @@ topLevel: {
   # 统一接口规范：显式接收 _pkgs
   flake.modules.homeManager.dev = {
     config,
-    dotfiles,
     ...
   }: {
     programs.git = {
@@ -104,6 +103,10 @@ topLevel: {
 
     programs.lazygit.enable = true;
 
-    home.file.".global.gitignore".source = "${dotfiles}/git/.global.gitignore";
+    home.file.".global.gitignore".text = ''
+      .DS_Store
+      .env
+      *.local.*
+    '';
   };
 }

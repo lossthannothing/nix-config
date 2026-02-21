@@ -100,14 +100,6 @@ nix-config/
 ├── hosts/                 # Host definitions (auto-scanned)
 │   └── nixos-wsl/         # WSL host configuration
 │       └── default.nix    # Self-registering host definition
-└── dotfiles/              # Submodule: external dotfiles repo
-    ├── bash/
-    ├── claude/
-    ├── config/
-    ├── cursor/
-    ├── git/
-    ├── zsh/               # Zsh dotfiles (functions.zsh)
-    └── README.md
 ```
 
 ### Module Auto-Merge Rules

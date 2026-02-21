@@ -18,7 +18,6 @@ in {
       name: module: let
         specialArgs = {
           inherit inputs;
-          inherit (inputs) dotfiles;
           hostConfig = {
             name = lib.removePrefix prefix name;
           };
@@ -55,7 +54,6 @@ in {
 
           extraSpecialArgs = {
             inherit inputs;
-            inherit (inputs) dotfiles;
             hostConfig = {
               name = lib.removePrefix prefix name;
             };
