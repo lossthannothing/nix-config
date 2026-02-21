@@ -4,9 +4,11 @@
   nixConfig = {
     extra-substituters = [
       "https://anyrun.cachix.org"
+      "https://niri.cachix.org"
     ];
     extra-trusted-public-keys = [
       "anyrun.cachix.org-1:pqBobmOjI7nKlsUMV25u9QHa9btJK65/C8vnO3p346s="
+      "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
     ];
   };
 
@@ -20,6 +22,11 @@
     };
 
     nixos-wsl.url = "github:nix-community/NixOS-WSL";
+
+    niri = {
+      url = "github:sodiboo/niri-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     dotfiles = {
       url = "github:lossthannothing/.dotfiles/master";

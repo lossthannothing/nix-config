@@ -47,10 +47,10 @@
       settings = {
         on-unmatched = "warn";
         excludes = [
-          "*.md"        # 排除 markdown 文件
+          "*.md" # 排除 markdown 文件
           ".trellis/**" # 排除 trellis 脚本目录及其所有内容
           "*.task.json" # 如果有这种特定格式的 JSON，建议也排除
-          "LICENSE"     # 通常 LICENSE 也不需要格式化
+          "LICENSE" # 通常 LICENSE 也不需要格式化
         ];
       };
     };
