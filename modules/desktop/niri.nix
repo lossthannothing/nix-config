@@ -28,7 +28,10 @@
         # --- Startup ---
         spawn-at-startup = [
           {argv = ["waybar"];}
-          {argv = ["kitty"];}
+          {argv = ["alacritty"];}
+          {argv = ["swww-daemon"];}
+          {argv = ["wired"];}
+          {argv = ["wl-paste" "--watch" "cliphist" "store"];}
         ];
 
         # --- Layout ---
@@ -53,18 +56,13 @@
           }
         ];
 
-        # --- Output ---
-        outputs."Virtual-1" = {
-          scale = 1.0;
-        };
-
         # --- Keybindings ---
         binds = {
           # Hotkey overlay
           "Mod+Shift+Slash".action.show-hotkey-overlay = [];
 
           # Applications
-          "Mod+T".action.spawn = "kitty";
+          "Mod+T".action.spawn = "alacritty";
           "Mod+Space".action.spawn = "fuzzel";
           "Super+Alt+L".action.spawn = "swaylock";
 
@@ -251,7 +249,7 @@
             allow-inhibiting = false;
             action.toggle-keyboard-shortcuts-inhibit = [];
           };
-          "Mod+Shift+E".action.quit = [];
+          "Mod+Shift+E".action.spawn = "wlogout";
           "Ctrl+Alt+Delete".action.quit = [];
           "Mod+Shift+P".action.power-off-monitors = [];
         };

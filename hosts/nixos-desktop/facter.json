@@ -1,0 +1,3 @@
+{
+  "_comment": "Placeholder: generate with 'sudo nix run nixpkgs#nixos-facter -- -o hosts/nixos-desktop/facter.json'"
+}
