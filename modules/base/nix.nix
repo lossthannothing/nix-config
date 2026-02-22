@@ -4,6 +4,8 @@
     # 注入到 nixos.base
     # ============================================================
     nixos.base = {pkgs, ...}: {
+      nixpkgs.config.allowUnfree = true;
+
       nix = {
         channel.enable = false;
         nixPath = ["nixpkgs=${pkgs.path}"];

@@ -12,15 +12,8 @@
       enable = true;
     };
 
-    # GTK theming
-    gtk = {
-      enable = true;
-      catppuccin.enable = true;
-      iconTheme = {
-        package = pkgs.papirus-icon-theme;
-        name = "Papirus-Dark";
-      };
-    };
+    # GTK theming (iconTheme managed by catppuccin module)
+    gtk.enable = true;
 
     # Qt theming
     qt = {

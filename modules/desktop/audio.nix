@@ -16,6 +16,6 @@
     };
 
     # Ensure PulseAudio is disabled (conflicts with PipeWire)
-    hardware.pulseaudio.enable = false;
+    services.pulseaudio.enable = false;
   };
 }

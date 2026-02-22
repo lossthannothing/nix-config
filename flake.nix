@@ -43,6 +43,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Wired notification daemon
+    wired-notify = {
+      url = "github:Toqozz/wired-notify";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Catppuccin theming
     catppuccin = {
       url = "github:catppuccin/nix";

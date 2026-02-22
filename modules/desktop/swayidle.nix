@@ -7,16 +7,10 @@
   flake.modules.homeManager.desktop = {
     services.swayidle = {
       enable = true;
-      events = [
-        {
-          event = "before-sleep";
-          command = "swaylock -f";
-        }
-        {
-          event = "lock";
-          command = "swaylock -f";
-        }
-      ];
+      events = {
+        before-sleep = "swaylock -f";
+        lock = "swaylock -f";
+      };
       timeouts = [
         {
           timeout = 300;

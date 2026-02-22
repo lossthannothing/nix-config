@@ -2,9 +2,10 @@
 #
 # wired-notify - Rust notification daemon
 # Catppuccin Mocha color scheme
+# Requires wired-notify flake overlay + HM module in host config
 {
-  flake.modules.homeManager.desktop = {pkgs, ...}: {
-    home.packages = [pkgs.wired-notify];
+  flake.modules.homeManager.desktop = {
+    services.wired.enable = true;
 
     # wired-notify config
     xdg.configFile."wired/wired.ron".text = ''

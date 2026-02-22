@@ -31,23 +31,7 @@
           indicator-radius = 120;
           indicator-thickness = 10;
 
-          # Catppuccin Mocha colors
-          inside-color = "1e1e2e";
-          ring-color = "b4befe";
-          key-hl-color = "a6e3a1";
-          bs-hl-color = "f38ba8";
-          text-color = "cdd6f4";
-          inside-clear-color = "1e1e2e";
-          ring-clear-color = "f9e2af";
-          text-clear-color = "cdd6f4";
-          inside-ver-color = "1e1e2e";
-          ring-ver-color = "89b4fa";
-          text-ver-color = "cdd6f4";
-          inside-wrong-color = "1e1e2e";
-          ring-wrong-color = "f38ba8";
-          text-wrong-color = "cdd6f4";
-          line-color = "00000000";
-          separator-color = "00000000";
+          # Colors managed by catppuccin.enable in theming.nix
         };
       };
     };
