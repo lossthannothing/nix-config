@@ -1,5 +1,7 @@
 # nix-config
 
+[![English](https://img.shields.io/badge/lang-English-blue.svg)](README.md) [![简体中文](https://img.shields.io/badge/lang-简体中文-red.svg)](README_CN.md)
+
 Personal NixOS and Home Manager configuration, inspired by [drupol/infra](https://github.com/drupol/infra) modular architecture pattern.
 
 ## Architecture Overview
@@ -398,6 +400,7 @@ This configuration follows these principles:
 
 ## Documentation
 
+- **[README_CN.md](./README_CN.md)** - 中文版本文档 (Chinese README)
 - **[CLAUDE.md](./CLAUDE.md)** - Detailed project architecture and patterns (Chinese)
 - **[NixOS Options](https://search.nixos.org/options)** - Official NixOS options search
 - **[Nix Packages](https://search.nixos.org/packages)** - Nixpkgs package search
