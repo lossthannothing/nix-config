@@ -40,10 +40,13 @@ if [[ "${1:-}" == "--local" ]]; then
   read -rp "Continue? [y/N] " confirm
   [[ "$confirm" =~ ^[Yy]$ ]] || exit 1
 
+  # 设置国内镜像源（解决 rebuild 前网络问题）
+  export NIX_CONFIG="substituters = https://nix-community.org/cache https://cache.nixos.org https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
+
   sudo nix run github:nix-community/disko/latest -- \
     --mode destroy,format,mount \
     --flake "$FLAKE_DIR#$HOST"
-  sudo nixos-install --flake "$FLAKE_DIR#$HOST" --no-root-passwd
+  sudo nixos-install --flake "$FLAKE_DIR#$HOST"
 
   echo "Done! Reboot: reboot"
   exit 0
@@ -69,6 +72,9 @@ echo ""
 echo "WARNING: This will format target disk and install NixOS!"
 read -rp "Continue? [y/N] " confirm
 [[ "$confirm" =~ ^[Yy]$ ]] || exit 1
+
+# 设置国内镜像源（解决 rebuild 前网络问题）
+export NIX_CONFIG="substituters = https://nix-community.org/cache https://cache.nixos.org https://mirrors.tuna.tsinghua.edu.cn/nix-channels/store"
 
 nix run github:nix-community/nixos-anywhere -- \
   --flake "$FLAKE_DIR#$HOST" \

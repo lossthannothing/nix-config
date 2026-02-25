@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
 #
-# nix-proxy-manager.sh - A script to quickly configure a proxy for the Nix daemon.
+# nixdaemon-proxy.sh - NixOS 物理/虚拟机 nix-daemon 代理配置脚本
+#
+# 用途：为非 WSL 环境（物理机/VM）的 nix-daemon 服务配置代理
 #
 # Usage:
-#   ./nix-proxy-manager.sh http    # Set HTTP proxy
-#   ./nix-proxy-manager.sh socks   # Set SOCKS5 proxy
-#   ./nix-proxy-manager.sh off     # Clear proxy settings
+#   ./nixdaemon-proxy.sh http    # 设置 HTTP 代理
+#   ./nixdaemon-proxy.sh socks   # 设置 SOCKS5 代理
+#   ./nixdaemon-proxy.sh off     # 清除代理设置
 #
 
 # --- Configuration ---
