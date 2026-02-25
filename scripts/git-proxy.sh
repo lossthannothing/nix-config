@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# proxy-wrapper.sh - Git 命令代理包装器
+# git-proxy.sh - Git 命令代理包装器
+#
+# 用途：为 Git 命令临时设置代理环境变量
+# 使用：./scripts/git-proxy.sh git push
 
 set -euo pipefail
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# set-proxy.sh - 为当前 shell 会话设置代理环境变量
-# 专为 Claude Code 等非交互式环境设计
+# shell-proxy.sh - Shell 会话代理设置
+#
+# 用途：为当前 shell 会话设置代理环境变量
+# 使用：source ./scripts/shell-proxy.sh [port]
+#       或：./scripts/shell-proxy.sh && export $(grep "^proxy" /tmp/proxy.env)
 
 set -euo pipefail
 

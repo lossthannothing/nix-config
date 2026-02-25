@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# @file nix-proxy-manager.sh
-# @description 用于在 NixOS WSL2 环境下为 nix-daemon 配置临时代理的自动化工具
-# @usage ./nix-proxy-manager.sh {http|socks|off} [port]
+# @file nix-daemon-wsl-proxy.sh
+# @description NixOS WSL2 环境下 nix-daemon 代理配置工具
+# @usage ./nix-daemon-wsl-proxy.sh {http|socks|off} [port]
 
 set -e # 遇到错误立即退出
 

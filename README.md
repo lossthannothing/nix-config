@@ -85,10 +85,11 @@ nix-config/
 ├── CLAUDE.md              # Claude AI assistant context
 ├── README.md              # This file
 ├── scripts/               # Utility scripts
-│   ├── deploy.sh         # Live USB (disko) & remote (nixos-anywhere) deployment
-│   ├── nix-proxy.sh      # Nix proxy helper
-│   ├── proxy-wrapper.sh  # Proxy wrapper for network operations
-│   └── set-proxy.sh      # Proxy environment setup
+│   ├── deploy.sh              # 交互式部署菜单 + dskisko + nixos-anywhere
+│   ├── nixdaemon-proxy.sh     # Nix daemon 代理配置 (物理机/VM)
+│   ├── nix-daemon-wsl-proxy.sh # Nix daemon 代理配置 (WSL)
+│   ├── git-proxy.sh            # Git 命令代理包装器
+│   └── shell-proxy.sh          # Shell 会话代理设置
 ├── modules/               # Feature modules (auto-scanned)
 │   ├── base/              # Base system + user config
 │   │   ├── console/       # Console settings
@@ -182,19 +183,20 @@ cd nix-config
 
 2. Deploy to your system:
 ```bash
-# For NixOS-WSL
-sudo nixos-rebuild switch --flake .#nixos-wsl
+# 交互式部署 (推荐)
+./scripts/deploy.sh
 
-# For NixOS Desktop
+# 直接部署 NixOS 系统
+sudo nixos-rebuild switch --flake .#nixos-wsl
 sudo nixos-rebuild switch --flake .#nixos-desktop
 
-# For Home Manager only (e.g., Fedora-WSL)
+# 部署 Home Manager (独立模式)
 home-manager switch --flake .#hosts/fedora-wsl
 
-# For local installation via Live USB (disko)
+# Live USB 安装 (disko 声明式分区)
 ./scripts/deploy.sh --local nixos-desktop
 
-# For remote installation (nixos-anywhere)
+# 远程安装 (nixos-anywhere)
 ./scripts/deploy.sh nixos-vm 192.168.122.100
 ```
 
@@ -361,19 +363,40 @@ Replaces traditional `hardware-configuration.nix`:
 ## Deployment Commands
 
 ```bash
-# NixOS system deployment
-sudo nixos-rebuild switch --flake .#nixos-wsl         # Deploy WSL
-sudo nixos-rebuild switch --flake .#nixos-desktop      # Deploy desktop
-sudo nixos-rebuild switch --flake .#nixos-vm           # Deploy VM
+# 交互式部署菜单 (推荐，自动检测环境)
+./scripts/deploy.sh
 
-# Home Manager standalone deployment
-home-manager switch --flake .#hosts/fedora-wsl         # Deploy independent HM
+# NixOS 系统重建
+sudo nixos-rebuild switch --flake .#nixos-wsl
+sudo nixos-rebuild switch --flake .#nixos-desktop
+sudo nixos-rebuild switch --flake .#nixos-vm
 
-# Live USB installation (disko - declarative partitioning)
+# Home Manager 独立部署
+home-manager switch --flake .#hosts/fedora-wsl
+
+# Live USB 安装 (disko 声明式分区)
 ./scripts/deploy.sh --local nixos-desktop
 
-# Remote deployment (nixos-anywhere)
+# 远程部署 (nixos-anywhere)
 ./scripts/deploy.sh nixos-vm 192.168.122.100
+```
+
+### Proxy Scripts (网络代理配置)
+
+```bash
+# Git 命令代理包装器
+./scripts/git-proxy.sh git push
+
+# Shell 会话代理
+source ./scripts/shell-proxy.sh
+
+# Nix daemon 代理 (物理机/VM)
+sudo ./scripts/nixdaemon-proxy.sh http    # HTTP 代理
+sudo ./scripts/nixdaemon-proxy.sh socks   # SOCKS5 代理
+sudo ./scripts/nixdaemon-proxy.sh off     # 清除代理
+
+# Nix daemon 代理 (WSL)
+sudo ./scripts/nix-daemon-wsl-proxy.sh http
 ```
 
 ## Platform Support
