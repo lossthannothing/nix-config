@@ -17,21 +17,48 @@
 nix-config/
 ├── flake.nix                 # Flake 入口，定义 inputs 和基础配置
 ├── flake.lock                # 依赖锁定文件
-├── apply_ref.sh              # 参考部署脚本（支持多平台）
-├── scripts/                  # 工具脚本
-├── modules/                  # 功能模块（自动扫描）
+├── apply.sh                  # 交互式多平台部署脚本
+├── scripts/                  # 工具脚本（代理、部署辅助）
+├── modules/                  # 功能模块（import-tree 自动扫描）
 │   ├── base/                 # 基础配置（系统 + 用户）
-│   ├── dev/                  # 开发工具配置
-│   │   └── languages/        # 语言工具链（Rust, Nix 等）
-│   ├── shell/                # Shell 配置（Zsh, Bash 等）
-│   ├── desktop/              # 桌面环境配置
+│   │   ├── facter.nix        # nixos-facter 硬件检测
+│   │   ├── home.nix          # HM 基础
+│   │   ├── nix.nix           # Nix 守护进程配置
+│   │   ├── i18n.nix          # 国际化
+│   │   ├── console/          # 控制台配置
+│   │   ├── system/           # 系统基础
+│   │   └── time/             # 时区
+│   ├── dev/                  # 开发工具（自动合并到 homeManager.dev）
+│   │   ├── git.nix, direnv.nix, editors.nix, ripgrep.nix ...
+│   │   └── languages/        # 语言工具链（rust, go, nix, python, javascript）
+│   ├── shell/                # Shell 工具（自动合并到 homeManager.shell）
+│   │   └── zsh.nix, starship.nix, fzf.nix, bat.nix, eza.nix ...
+│   ├── desktop/              # 桌面环境（HM 合并到 homeManager.desktop，NixOS 各自独立）
+│   │   ├── niri.nix          # Niri compositor
+│   │   ├── nvidia.nix        # NVIDIA 驱动
+│   │   ├── audio.nix         # PipeWire 音频
+│   │   ├── fonts.nix         # 系统字体
+│   │   └── ...               # waybar, alacritty, theming, screenshot 等
+│   ├── wsl/                  # WSL 统一配置（nixos.wsl + homeManager.wsl）
+│   │   └── default.nix
 │   ├── users/                # 用户特定配置
-│   └── flake-parts/          # Flake-parts 生成器
-│       ├── host-machines.nix # 自动生成 nixosConfigurations
-│       └── nixpkgs.nix       # Nixpkgs 配置
-└── hosts/                    # 主机定义（自动扫描）
-    └── nixos-wsl/            # WSL 主机配置
-        └── default.nix       # 主机定义，自注册到 flake.modules
+│   │   └── loss/default.nix  # 用户 loss（nixos.loss + homeManager.loss + meta）
+│   └── flake-parts/          # Flake-parts 生成器（架构核心）
+│       ├── host-machines.nix # 自动生成 nixosConfigurations/homeConfigurations
+│       ├── nixpkgs.nix       # Nixpkgs 配置和 overlays
+│       ├── flake-parts.nix   # flake-parts modules 启用
+│       ├── fmt.nix           # treefmt-nix 多语言格式化
+│       └── flake.nix         # flake.meta 定义
+└── hosts/                    # 主机定义（import-tree 自动扫描）
+    ├── nixos-wsl/            # NixOS-WSL 完整系统
+    │   └── default.nix
+    ├── nixos-desktop/        # NixOS 桌面（Niri + NVIDIA）
+    │   ├── default.nix
+    │   └── facter.json       # 硬件检测报告
+    ├── nixos-vm/             # NixOS VM 版本（轻量桌面）
+    │   └── default.nix
+    └── fedora-wsl/           # Fedora-WSL（仅 Home Manager）
+        └── default.nix
 ```
 
 ### 模块架构说明
@@ -39,12 +66,22 @@ nix-config/
 **模块类型**：
 - `flake.modules.nixos.*` - NixOS 系统层配置
 - `flake.modules.homeManager.*` - Home Manager 用户层配置
-- 同一功能（如 `dev`）可在一个文件中同时定义两层配置
+- 同一功能（如 `wsl`）可在一个文件中同时定义两层配置
 
 **自动扫描机制**：
 - 通过 `import-tree` 自动扫描 `modules/` 和 `hosts/` 目录
 - 所有 `.nix` 文件会自动注册到 `flake.modules` 表
-- 主机文件通过 `flake.modules.nixos."hosts/<name>"` 自注册
+- 主机文件通过 `flake.modules.nixos."hosts/<name>"` 或 `flake.modules.homeManager."hosts/<name>"` 自注册
+- `host-machines.nix` 自动过滤 `hosts/` 前缀的模块，生成标准 flake outputs
+
+**Inputs 约束**：
+- 所有 flake inputs 必须在 `flake.nix` 中集中声明（Nix 硬性限制）
+- 模块通过 `{inputs, ...}:` 参数访问 inputs
+- NixOS/HM 模块内部通过 `specialArgs` 获取 inputs
+
+**Desktop 模块特殊模式**：
+- HM 侧：所有 desktop/*.nix 的 HM 配置自动合并到 `homeManager.desktop`
+- NixOS 侧：各模块注册独立命名空间（`nixos.nvidia`, `nixos.audio` 等），需在 host 中逐一导入
 
 ## 开发环境
 
@@ -69,21 +106,30 @@ nix fmt
 # 查看可用系统
 nix flake show
 
-# 部署到当前系统（WSL）
+# 部署到 WSL
 sudo nixos-rebuild switch --flake .#nixos-wsl
 
-# 部署 Home Manager（仅用户配置）
-home-manager switch --flake .#loss@nixos-wsl
+# 部署桌面
+sudo nixos-rebuild switch --flake .#nixos-desktop
+
+# 部署 VM
+sudo nixos-rebuild switch --flake .#nixos-vm
+
+# 部署 Home Manager（Fedora-WSL 独立模式）
+home-manager switch --flake .#hosts/fedora-wsl
 
 # 测试构建（不激活）
 nixos-rebuild build --flake .#nixos-wsl
+
+# 生成硬件检测报告
+sudo nix run nixpkgs#nixos-facter -- -o hosts/<hostname>/facter.json
 ```
 
-### 使用参考脚本部署
+### 使用部署脚本
 
 ```bash
 # 交互式选择部署选项
-./apply_ref.sh
+./apply.sh
 ```
 
 ## 代码风格
@@ -184,7 +230,7 @@ chore: 更新 flake inputs
 - 读取项目文件
 - 运行 `nix flake check`、`nix fmt`
 - 创建或修改 `modules/` 下的模块文件
-- 更新文档（README.md, AGENTS.md）
+- 更新文档（README.md, AGENTS.md, CLAUDE.md）
 
 ### 需要确认的操作
 
@@ -210,28 +256,42 @@ chore: 更新 flake inputs
 ### 关键技术栈
 
 - **Nix Flakes** - 可重复构建
-- **flake-parts** - 模块化 Flake 管理
+- **flake-parts** - 模块化 Flake 管理（open modules 选项）
 - **import-tree** - 自动扫描目录
 - **Home Manager** - 用户环境管理
 - **NixOS-WSL** - WSL 集成
+- **nixos-facter** - 硬件检测（替代 hardware-configuration.nix）
 - **rust-overlay** - Rust 工具链
 - **treefmt-nix** - 代码格式化
+- **Catppuccin** - Mocha 主题系统
+- **Niri** - Scrollable-tiling Wayland compositor
+- **pkgs-by-name-for-flake-parts** - 自定义包管理（⚠️ 已声明未启用）
 
 ## 常见任务
 
 ### 添加新软件包
 
 ```nix
-# 系统级：编辑 modules/base/system/default.nix
-environment.systemPackages = with pkgs; [
-  # 添加你的包
-  new-package
-];
+# 开发工具：创建 modules/dev/<tool>.nix
+{
+  flake.modules.homeManager.dev = {pkgs, ...}: {
+    home.packages = with pkgs; [ new-package ];
+  };
+}
 
-# 用户级：编辑 modules/base/home/default.nix
-home.packages = with pkgs; [
-  new-package
-];
+# Shell 工具：创建 modules/shell/<tool>.nix
+{
+  flake.modules.homeManager.shell = {
+    programs.<tool>.enable = true;
+  };
+}
+
+# 桌面组件：创建 modules/desktop/<component>.nix
+{
+  flake.modules.homeManager.desktop = {pkgs, ...}: {
+    programs.<component>.enable = true;
+  };
+}
 ```
 
 ### 添加新模块
@@ -244,9 +304,12 @@ home.packages = with pkgs; [
 ### 添加新主机
 
 1. 创建 `hosts/hostname/default.nix`
-2. 自注册：`flake.modules.nixos."hosts/hostname" = { ... };`
-3. 导入所需模块
-4. 配置平台特定设置（hardware, services 等）
+2. 自注册（选择一种）：
+   - 完整 NixOS：`flake.modules.nixos."hosts/hostname" = {...}: { ... };`
+   - 仅 HM：`flake.modules.homeManager."hosts/hostname" = {...}: { ... };`
+3. 导入所需模块（参考现有 host 配置）
+4. 如需硬件检测：`sudo nix run nixpkgs#nixos-facter -- -o hosts/hostname/facter.json`
+5. `host-machines.nix` 自动检测 `hosts/` 前缀并注册
 
 ## 疑难解答
 
@@ -265,12 +328,19 @@ home.packages = with pkgs; [
 - 避免模块间直接 import
 - 使用 `config.flake.modules.*` 引用其他模块
 
+**问题：Inputs 无法在模块中声明**
+- Nix flake 硬性约束：inputs 必须在 `flake.nix` 中集中声明
+- 模块通过 `{inputs, ...}:` 参数访问 inputs
+- NixOS/HM 模块通过 `specialArgs` 获取 inputs
+
 ## 更多信息
 
 - 项目 README：查看 `README.md`
 - NixOS 手册：https://nixos.org/manual/nixos/stable/
 - Home Manager 手册：https://nix-community.github.io/home-manager/
 - Flake-parts 文档：https://flake.parts/
+- import-tree：https://github.com/vic/import-tree
+- nixos-facter：https://github.com/numtide/nixos-facter
 <!-- TRELLIS:START -->
 # Trellis Instructions
 

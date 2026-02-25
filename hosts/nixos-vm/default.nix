@@ -1,37 +1,30 @@
-# hosts/nixos-desktop/default.nix
+# hosts/nixos-vm/default.nix
 #
-# NixOS desktop with Niri compositor (NVIDIA Blackwell)
-# Hardware auto-detected from facter.json
+# NixOS VM with Niri compositor (lightweight desktop, no NVIDIA)
+# For testing and VM deployment (QEMU/VirtualBox/VMware)
 #
-# Build ISO (nixpkgs built-in image system):
-#   nix build .#nixosConfigurations.nixos-desktop.config.system.build.images.iso
+# Build: sudo nixos-rebuild switch --flake .#nixos-vm
+# Build ISO: nix build .#nixosConfigurations.nixos-vm.config.system.build.images.iso
 {
   config,
   inputs,
   ...
 }: {
-  flake.modules.nixos."hosts/nixos-desktop" = {...}: {
+  flake.modules.nixos."hosts/nixos-vm" = {...}: {
     imports = with config.flake.modules.nixos;
       [
-        # Hardware detection from facter.json (kernel modules, firmware)
-        {hardware.facter.reportPath = ./facter.json;}
-
         # External modules
         inputs.catppuccin.nixosModules.catppuccin
 
         # wired-notify overlay (provides pkgs.wired)
         {nixpkgs.overlays = [inputs.wired-notify.overlays.default];}
 
-        # System modules
+        # System modules (no nvidia, no facter for VM)
         base
         disko
-        facter
-        fonts
-        nvidia
         niri
         audio
-        bluetooth
-        power
+        fonts
         fcitx5
         swaylock
 
@@ -55,21 +48,19 @@
         }
       ];
 
-    # Boot
+    # VM boot configuration
     boot.loader.systemd-boot.enable = true;
     boot.loader.efi.canTouchEfiVariables = true;
 
-    # Declarative disk layout: single NVMe SSD with btrfs subvolumes
-    # Device placeholder — override at deploy time via:
-    #   nixos-anywhere --disk main /dev/disk/by-id/nvme-XXXX
+    # Declarative disk layout: single virtual disk with btrfs subvolumes
     disko.devices.disk.main = {
       type = "disk";
-      device = "/dev/disk/by-diskseq/1";
+      device = "/dev/vda";
       content = {
         type = "gpt";
         partitions = {
           ESP = {
-            size = "1G";
+            size = "512M";
             type = "EF00";
             content = {
               type = "filesystem";
@@ -86,15 +77,15 @@
               subvolumes = {
                 "@root" = {
                   mountpoint = "/";
-                  mountOptions = ["ssd" "noatime" "compress=zstd:3" "discard=async"];
+                  mountOptions = ["noatime" "compress=zstd:3"];
                 };
                 "@nix" = {
                   mountpoint = "/nix";
-                  mountOptions = ["ssd" "noatime" "compress-force=zstd:5" "discard=async"];
+                  mountOptions = ["noatime" "compress-force=zstd:5"];
                 };
                 "@home" = {
                   mountpoint = "/home";
-                  mountOptions = ["ssd" "noatime" "compress-force=zstd:1" "discard=async" "autodefrag"];
+                  mountOptions = ["noatime" "compress-force=zstd:1"];
                 };
               };
             };
@@ -104,10 +95,18 @@
     };
 
     # System identity
-    networking.hostName = "nixos-desktop";
+    networking.hostName = "nixos-vm";
 
     # Networking
     networking.networkmanager.enable = true;
+
+    # VM-specific: enable guest additions
+    virtualisation.vmVariant = {
+      virtualisation = {
+        memorySize = 4096;
+        cores = 4;
+      };
+    };
 
     # Auto-login to Niri compositor via greetd
     services.greetd = {

@@ -54,14 +54,34 @@ NixOS DevOps Engineer & ZCF Practitioner
 
 ---
 
+## Tech Stack（技术栈）
+
+| 技术 | 角色 | 状态 |
+|------|------|------|
+| Nix Flakes | 可重复、声明式构建系统 | ✅ 核心 |
+| flake-parts | 模块框架，通过 `flakeModules.modules` 启用 open module 选项 | ✅ 核心 |
+| import-tree | 递归扫描 `modules/` 和 `hosts/`，自动 import 所有 .nix 文件 | ✅ 核心 |
+| Home Manager | 用户级包和配置管理，支持 NixOS 集成和独立模式 | ✅ 核心 |
+| nixos-facter | 硬件检测，替代传统 hardware-configuration.nix | ✅ desktop 使用 |
+| disko | 声明式磁盘分区，自动生成 fileSystems | ✅ 核心 |
+| treefmt-nix | 多语言格式化（alejandra/deadnix/statix/shfmt/rustfmt/black/biome） | ✅ |
+| Catppuccin | Mocha 配色主题系统，通过 catppuccin/nix 集成 | ✅ desktop 使用 |
+| Niri | Scrollable-tiling Wayland compositor | ✅ desktop 使用 |
+| NixOS-WSL | NixOS 在 WSL2 上的集成 | ✅ wsl 使用 |
+| rust-overlay | Rust 工具链管理 | ✅ |
+| pkgs-by-name-for-flake-parts | 自定义包管理简化 | ⚠️ 已声明未启用 |
+
+---
+
 ## Nix Architecture（项目特定架构）
 
 ### 核心架构模式
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│  flake.nix                                            │
+│  flake.nix（机制层）                                    │
 │  ┌─────────────────────────────────────────────────┐  │
+│  │  inputs: 所有外部依赖（必须集中声明）          │  │
 │  │  import-tree 自动扫描                          │  │
 │  │  - ./modules/*  → 注册到 flake.modules        │  │
 │  │  - ./hosts/*    → 注册到 nixosConfigurations  │  │
@@ -75,19 +95,47 @@ NixOS DevOps Engineer & ZCF Practitioner
 │  │  flake.modules.homeManager.*  (用户级配置)   │  │
 │  └─────────────────────────────────────────────────┘  │
 │           ↓                    ↓                     │
-│    dev/, shell/, base/, wsl/, users/              │
-│    (自动合并到聚合模块)                             │
+│  dev/, shell/, base/, desktop/, wsl/, users/        │
+│  (自动合并到聚合模块)                                 │
 └─────────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────────┐
 │  hosts/（实例层）                                       │
 │  ┌─────────────────────────────────────────────────┐  │
 │  │  nixos-wsl/      → NixOS-WSL                │  │
-│  │  fedora-wsl/     → Fedora-WSL (仅 Home Manager)│
+│  │  nixos-desktop/  → NixOS Desktop (Niri+NVIDIA)│  │
+│  │  nixos-vm/       → NixOS VM (轻量桌面)      │  │
+│  │  fedora-wsl/     → Fedora-WSL (仅 HM)       │  │
 │  └─────────────────────────────────────────────────┘  │
 │  通过 imports 组装 modules 中的能力                  │
 └─────────────────────────────────────────────────────────┘
 ```
+
+### Flake Inputs 管理
+
+**关键约束**：所有 inputs **必须**在 `flake.nix` 中集中声明。这是 Nix flake 的设计限制 — inputs 是声明式的仓库源依赖，无法分散到模块中。
+
+**模块如何访问 inputs**：
+- flake-parts 模块最外层：`{inputs, ...}:` 参数（如 `rust.nix`）
+- NixOS/HM 模块内部：通过 `specialArgs` 传递（已在 `host-machines.nix:19-24,36` 配置）
+- topLevel 参数：`topLevel.inputs`（极少使用）
+
+**当前 Inputs 清单**：
+
+| Input | 用途 | 使用位置 |
+|-------|------|---------|
+| flake-parts | 模块框架 | `modules/flake-parts/flake-parts.nix` |
+| nixpkgs | 包仓库 | 全局 |
+| home-manager | 用户环境 | `modules/flake-parts/host-machines.nix` |
+| import-tree | 目录扫描 | `flake.nix:74-75` |
+| nixos-wsl | WSL 集成 | `hosts/nixos-wsl/` |
+| niri | Wayland compositor | `modules/desktop/niri.nix` |
+| rust-overlay | Rust 工具链 | `modules/dev/languages/rust.nix` |
+| wired-notify | 通知守护进程 | `hosts/nixos-desktop/` |
+| catppuccin | 主题 | `hosts/nixos-desktop/` |
+| treefmt-nix | 格式化 | `modules/flake-parts/fmt.nix` |
+| disko | 声明式磁盘分区 | `modules/base/disko.nix` |
+| pkgs-by-name-for-flake-parts | 自定义包管理 | **未启用** |
 
 ### 目录与注册路径映射
 
@@ -95,15 +143,50 @@ NixOS DevOps Engineer & ZCF Practitioner
 |---------|---------|------|
 | `modules/dev/*.nix` | `homeManager.dev` | 开发工具（自动合并） |
 | `modules/shell/*.nix` | `homeManager.shell` | Shell 工具（自动合并） |
+| `modules/desktop/*.nix` | `homeManager.desktop` + 各自独立 `nixos.*` | 桌面环境（HM 聚合，NixOS 分散） |
 | `modules/base/*.nix` | `nixos.base` + `homeManager.base` | 基础配置 |
+| `modules/base/facter.nix` | `nixos.facter` | 硬件检测 |
+| `modules/base/disko.nix` | `nixos.disko` | 声明式磁盘分区 |
 | `modules/wsl/default.nix` | `nixos.wsl` + `homeManager.wsl` | WSL 统一配置 |
-| `modules/users/loss/default.nix` | `nixos.loss` + `homeManager.loss` | 用户配置 |
+| `modules/users/loss/default.nix` | `nixos.loss` + `homeManager.loss` + `flake.meta.users` | 用户配置 |
 | `modules/flake-parts/*.nix` | 系统生成器 | 架构核心 |
+
+### Module Namespace Registry
+
+**NixOS 命名空间**：
+
+| 命名空间 | 注册源 | 说明 |
+|----------|--------|------|
+| `nixos.base` | `base/nix.nix`, `i18n.nix`, `time/`, `system/`, `console/` | 多文件自动合并 |
+| `nixos.facter` | `base/facter.nix` | nixos-facter 工具 |
+| `nixos.disko` | `base/disko.nix` | 声明式磁盘分区 |
+| `nixos.rust` | `dev/languages/rust.nix` | Rust overlay 注入 |
+| `nixos.wsl` | `wsl/default.nix` | WSL 系统配置 |
+| `nixos.loss` | `users/loss/default.nix` | 用户系统配置 |
+| `nixos.nvidia` | `desktop/nvidia.nix` | NVIDIA 驱动 |
+| `nixos.niri` | `desktop/niri.nix` | Niri compositor |
+| `nixos.audio` | `desktop/audio.nix` | PipeWire 音频 |
+| `nixos.bluetooth` | `desktop/bluetooth.nix` | 蓝牙 |
+| `nixos.power` | `desktop/power.nix` | 电源管理 |
+| `nixos.fcitx5` | `desktop/fcitx5.nix` | 输入法 |
+| `nixos.swaylock` | `desktop/swaylock.nix` | PAM 认证 |
+| `nixos.fonts` | `desktop/fonts.nix` | 系统字体 |
+
+**Home Manager 命名空间**：
+
+| 命名空间 | 注册源 | 说明 |
+|----------|--------|------|
+| `homeManager.base` | `base/home.nix`, `base/nix.nix` | 多文件自动合并 |
+| `homeManager.shell` | `shell/*.nix`（11 文件） | 多文件自动合并 |
+| `homeManager.dev` | `dev/*.nix`（14 文件含 languages/） | 多文件自动合并 |
+| `homeManager.desktop` | `desktop/*.nix`（14+ 文件） | 多文件自动合并 |
+| `homeManager.wsl` | `wsl/default.nix` | WSL 用户配置 |
+| `homeManager.loss` | `users/loss/default.nix` | 用户 HM 配置 |
 
 ### 主机配置示例
 
 ```nix
-# hosts/nixos-wsl/default.nix（完整系统）
+# hosts/nixos-wsl/default.nix（完整 NixOS 系统）
 {
   config,
   inputs,
@@ -119,13 +202,10 @@ NixOS DevOps Engineer & ZCF Practitioner
         loss    # 用户系统配置
       ]
       ++ [
-        # Home Manager 集成
         {
           home-manager.users.loss = {
             imports = with config.flake.modules.homeManager; [
-              base
-              shell
-              dev
+              base shell dev
               wsl     # WSL 用户级配置
               loss    # 用户 Home Manager 配置
             ];
@@ -135,14 +215,47 @@ NixOS DevOps Engineer & ZCF Practitioner
   };
 }
 
-# hosts/fedora-wsl/default.nix（仅 Home Manager）
+# hosts/nixos-desktop/default.nix（桌面系统 + facter 硬件检测）
+{
+  config,
+  inputs,
+  ...
+}: {
+  flake.modules.nixos."hosts/nixos-desktop" = {...}: {
+    imports = with config.flake.modules.nixos;
+      [
+        {hardware.facter.reportPath = ./facter.json;}    # nixos-facter 硬件检测
+        inputs.catppuccin.nixosModules.catppuccin         # 外部 NixOS 模块
+        {nixpkgs.overlays = [inputs.wired-notify.overlays.default];}  # 外部 overlay
+
+        base facter fonts nvidia niri
+        audio bluetooth power fcitx5 swaylock
+        loss
+      ]
+      ++ [
+        {
+          home-manager.users.loss = {
+            imports = with config.flake.modules.homeManager; [
+              inputs.catppuccin.homeModules.catppuccin      # 外部 HM 模块
+              inputs.wired-notify.homeManagerModules.default
+              base shell dev desktop loss
+            ];
+          };
+        }
+      ];
+
+    # 硬件特定配置（磁盘、网络、启动）直接写在 host 中
+    boot.loader.systemd-boot.enable = true;
+    networking.hostName = "nixos-desktop";
+    networking.networkmanager.enable = true;
+  };
+}
+
+# hosts/fedora-wsl/default.nix（仅 Home Manager，Non-NixOS）
 {config, ...}: {
   flake.modules.homeManager."hosts/fedora-wsl" = {...}: {
     imports = with config.flake.modules.homeManager; [
-      base
-      shell
-      dev
-      loss
+      base shell dev loss
       wsl     # 跨发行版复用
     ];
 
@@ -181,12 +294,36 @@ NixOS DevOps Engineer & ZCF Practitioner
   };
 }
 
-# 情况4：需要 flake inputs
+# 情况4：需要 flake inputs + Overlay 注入（如 modules/dev/languages/rust.nix）
 {inputs, ...}: {
-  flake.modules.homeManager.dev = {
-    programs.rust.package = inputs.rust-overlay;
+  flake.modules = {
+    nixos.rust = {
+      nixpkgs.overlays = [inputs.rust-overlay.overlays.default];
+    };
+    homeManager.dev = {pkgs, ...}: {
+      nixpkgs.overlays = [inputs.rust-overlay.overlays.default];  # HM 层也注入，支持 Non-NixOS
+      home.packages = [pkgs.rust-bin.stable.latest.default];
+    };
   };
 }
+
+# 情况5：topLevel 参数访问 flake 元数据（如 modules/users/loss/default.nix）
+topLevel: {
+  flake = {
+    meta.users.loss = { name = "Loss"; username = "loss"; email = "..."; };
+    modules.nixos.loss = _: {
+      users.users.loss = {
+        description = topLevel.config.flake.meta.users.loss.name;
+        # ...
+      };
+    };
+    modules.homeManager.loss = { home.username = "loss"; };
+  };
+}
+
+# 情况6：在 host 中注入外部 overlay（如 hosts/nixos-desktop/default.nix）
+# 当外部 input 提供 overlay 且仅特定 host 需要时：
+{nixpkgs.overlays = [inputs.wired-notify.overlays.default];}
 ```
 
 ### WSL 统一模块架构
@@ -204,6 +341,29 @@ NixOS DevOps Engineer & ZCF Practitioner
    - WSL 工具和启动器
    - Shell 别名（explorer, notepad, clip）
    - PATH 注入
+
+### Desktop 模块架构
+
+`modules/desktop/*.nix` 采用 **HM 侧聚合 + NixOS 侧分散** 模式：
+
+**HM 侧**：所有 desktop/*.nix 的 HM 配置合并到 `homeManager.desktop`，host 只需导入一次 `desktop`：
+- alacritty, browser, fuzzel, media, niri, screenshot, swayidle, swaylock, swww, theming, waybar, wired-notify, wlogout, fcitx5
+
+**NixOS 侧**：各模块注册到独立命名空间，host 需逐一导入：
+- `nixos.nvidia`, `nixos.audio`, `nixos.bluetooth`, `nixos.power`, `nixos.fcitx5`, `nixos.swaylock`, `nixos.niri`, `nixos.fonts`
+
+**外部依赖**（需在 host imports 中直接导入）：
+- `inputs.catppuccin.nixosModules.catppuccin` + `inputs.catppuccin.homeModules.catppuccin`
+- `inputs.wired-notify.overlays.default`（overlay）+ `inputs.wired-notify.homeManagerModules.default`
+
+### 硬件检测 (nixos-facter)
+
+替代传统 `hardware-configuration.nix`：
+- `modules/base/facter.nix`：注册 `nixos.facter` 模块，安装 facter CLI
+- `hosts/nixos-desktop/facter.json`：硬件检测报告
+- host 中引用：`{hardware.facter.reportPath = ./facter.json;}`
+- 生成命令：`sudo nix run nixpkgs#nixos-facter -- -o hosts/<hostname>/facter.json`
+- **仅 desktop/VM host 使用**，WSL 不需要（硬件由 Windows 管理）
 
 ---
 
@@ -269,6 +429,28 @@ eza --tree --level=3       # 目录树
 }
 ```
 
+### 添加桌面组件
+
+```nix
+# 创建 modules/desktop/<component>.nix
+
+# 情况1：仅 HM 配置（自动合并到 homeManager.desktop）
+{
+  flake.modules.homeManager.desktop = {pkgs, ...}: {
+    programs.<component>.enable = true;
+  };
+}
+
+# 情况2：需要 NixOS + HM 双重注册
+{
+  flake.modules = {
+    nixos.<component> = { /* 系统级配置 */ };
+    homeManager.desktop = { /* 用户级配置，自动合并 */ };
+  };
+}
+# 注意：NixOS 侧需在 hosts/nixos-desktop/default.nix 中手动导入
+```
+
 ### 添加系统服务
 
 ```nix
@@ -281,11 +463,36 @@ eza --tree --level=3       # 目录树
 # 然后在 hosts/*/default.nix 中手动导入
 ```
 
+### 添加新主机
+
+```nix
+# 1. 创建 hosts/<hostname>/default.nix
+# 2. 选择注册模式：
+#    - 完整 NixOS: flake.modules.nixos."hosts/<hostname>" = {...}: { ... };
+#    - 仅 HM:     flake.modules.homeManager."hosts/<hostname>" = {...}: { ... };
+# 3. 导入所需模块（参考现有 host）
+# 4. 如需硬件检测：sudo nix run nixpkgs#nixos-facter -- -o hosts/<hostname>/facter.json
+# 5. host-machines.nix 自动检测 "hosts/" 前缀并注册到 nixosConfigurations/homeConfigurations
+```
+
+### 部署命令
+
+```bash
+sudo nixos-rebuild switch --flake .#nixos-wsl         # 部署 WSL
+sudo nixos-rebuild switch --flake .#nixos-desktop      # 部署桌面
+sudo nixos-rebuild switch --flake .#nixos-vm           # 部署 VM
+home-manager switch --flake .#hosts/fedora-wsl         # 部署独立 HM
+./scripts/deploy.sh --local nixos-desktop               # 本机 Live USB 安装 (disko)
+./scripts/deploy.sh nixos-vm 192.168.122.100            # 远程部署 (nixos-anywhere)
+nix fmt                                                 # 格式化
+nix flake check                                         # 语法检查
+```
+
 ### 调试配置
 
 ```bash
-nix flake check                              # 语法检查
 nix eval .#nixosConfigurations.nixos-wsl      # 评估配置
+nix eval .#nixosConfigurations.nixos-desktop   # 评估桌面配置
 nix repl                                      # 交互式检查
 :lf .
 :p outputs.nixosConfigurations.nixos-wsl.config.services
@@ -298,7 +505,7 @@ nix repl                                      # 交互式检查
 ### 自由修改
 - `modules/*`（添加/编辑）
 - `scripts/*`
-- `CLAUDE.md`, `README.md`
+- `CLAUDE.md`, `README.md`, `AGENTS.md`
 
 ### 需要确认
 - `flake.nix` 或 `flake.lock`
@@ -333,6 +540,13 @@ HOST=$(ip route | awk '/default/ {print $3; exit}') && \
 - Nix Packages: https://search.nixos.org/packages
 - Home Manager Options: https://nix-community.github.io/home-manager/options.xhtml
 - Flake-parts: https://flake.parts/
+- import-tree: https://github.com/vic/import-tree
+- nixos-facter: https://github.com/numtide/nixos-facter
+- disko: https://github.com/nix-community/disko
+- nixos-anywhere: https://github.com/nix-community/nixos-anywhere
+- Niri Flake: https://github.com/sodiboo/niri-flake
+- Catppuccin/nix: https://github.com/catppuccin/nix
+- Architecture reference: https://github.com/drupol/infra
 
 ---
 
