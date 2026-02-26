@@ -1,5 +1,3 @@
-**优先加载系统指令：执行任务前先加载 ~/.claude/CLAUDE.md 并遵循其协议**
-
 # CLAUDE.md
 本文件为 Claude（Anthropic AI 助手）提供项目特定的上下文和指导。
 
@@ -10,66 +8,17 @@
 ### Role
 NixOS DevOps Engineer & ZCF Practitioner
 
-### File Agency（文件操作协议）
-**强制使用** Serena MCP tools 进行代码操作：
-- 符号级操作：`find_symbol`, `replace_symbol_body`, `insert_before/after_symbol`
-- 文件级操作：`replace_content`（正则匹配，支持通配符）
-- 探索工具：`get_symbols_overview`, `search_for_pattern`
-
-**禁止使用** Glob/Grep 直接读取文件（除非明确仅需要文件名列表）
-
-### Git Compliance（版本控制规范）
-**仅使用**以下 skills 进行 Git 操作：
-- `/zcf:git-commit` - 提交代码（自动生成规范消息）
-- `/zcf:git-worktree` - 管理工作树
-- `/zcf:git-rollback` - 回滚操作
-
-**禁止**直接执行 `git commit/push/reset` 等
-
 ### Response Language
 使用简体中文响应（全局设置覆盖）
 
 ---
 
-## ZCF Lifecycle（工作流）
+## 子文档索引
 
-### 1. Init & Planning（初始化与规划）
-- `/zcf:init-project` - 项目初始化，生成 CLAUDE.md 索引
-- `/zcf:feat` - 新功能开发，启动规划流程
-- `/planning-with-files` - 复杂任务，基于文件的规划
-
-### 2. Execution（执行）
-- Serena tools - 代码编辑与重构
-- `/nixos-cc-runtime` - NixOS 运行时上下文访问
-- Serena memories - 项目知识存储与查询
-
-### 3. Version Control（版本控制）
-- `/zcf:git-commit` - 提交变更
-- `/zcf:git-worktree` - 并行开发分支管理
-- `/zcf:git-rollback` - 紧急回滚
-
-### 4. Evolution（演进）
-- `/skill-creator` - 创建新的 Skill/模式
-- `plugin-dev:*` skills - 扩展 Claude Code 功能
-
----
-
-## Tech Stack（技术栈）
-
-| 技术 | 角色 | 状态 |
-|------|------|------|
-| Nix Flakes | 可重复、声明式构建系统 | ✅ 核心 |
-| flake-parts | 模块框架，通过 `flakeModules.modules` 启用 open module 选项 | ✅ 核心 |
-| import-tree | 递归扫描 `modules/` 和 `hosts/`，自动 import 所有 .nix 文件 | ✅ 核心 |
-| Home Manager | 用户级包和配置管理，支持 NixOS 集成和独立模式 | ✅ 核心 |
-| nixos-facter | 硬件检测，替代传统 hardware-configuration.nix | ✅ desktop 使用 |
-| disko | 声明式磁盘分区，自动生成 fileSystems | ✅ 核心 |
-| treefmt-nix | 多语言格式化（alejandra/deadnix/statix/shfmt/rustfmt/black/biome） | ✅ |
-| Catppuccin | Mocha 配色主题系统，通过 catppuccin/nix 集成 | ✅ desktop 使用 |
-| Niri | Scrollable-tiling Wayland compositor | ✅ desktop 使用 |
-| NixOS-WSL | NixOS 在 WSL2 上的集成 | ✅ wsl 使用 |
-| rust-overlay | Rust 工具链管理 | ✅ |
-| pkgs-by-name-for-flake-parts | 自定义包管理简化 | ⚠️ 已声明未启用 |
+| 文档路径 | 内容 |
+|---------|------|
+| `modules/flake-parts/CLAUDE.md` | flake-parts 系统生成器层架构、host-machines.nix 工作原理 |
+| `AGENTS.md` | AI 助手项目上下文、代码风格、Git 工作流、常见任务 |
 
 ---
 
@@ -367,27 +316,55 @@ topLevel: {
 
 ---
 
-## Modern Toolchain（现代工具链）
+## Common Tasks（常见任务）
 
-| 传统命令 | 现代替代 | 配置位置 |
-|---------|---------|---------|
-| `find` | `fd` | `modules/shell/fd.nix` |
-| `grep` | `rg` (ripgrep) | `modules/dev/ripgrep.nix` |
-| `ls` | `eza` | `modules/shell/eza.nix` |
-| `cat` | `bat` | `modules/shell/bat.nix` |
-| `cd` | `z` (zoxide) | `modules/shell/zoxide.nix` |
-| `tree` | `eza --tree` | `modules/shell/eza.nix` |
+### 部署命令
 
-### 使用示例
 ```bash
-fd --extension nix        # 查找 .nix 文件
-rg "flake.modules"         # 搜索文本
-eza --tree --level=3       # 目录树
+# 交互式部署（推荐）
+./scripts/deploy.sh
+
+# NixOS 系统重建
+sudo nixos-rebuild switch --flake .#nixos-wsl
+sudo nixos-rebuild switch --flake .#nixos-desktop
+sudo nixos-rebuild switch --flake .#nixos-vm
+
+# Home Manager 独立部署
+home-manager switch --flake .#hosts/fedora-wsl
+
+# Live USB 安装（disko 声明式分区）
+./scripts/deploy.sh --local nixos-desktop
+
+# 远程部署（nixos-anywhere）
+./scripts/deploy.sh nixos-vm 192.168.122.100
 ```
 
----
+### 开发命令
 
-## Common Tasks（常见任务）
+```bash
+# 检查配置
+nix flake check
+
+# 格式化代码（alejandra, deadnix, statix, shfmt, rustfmt, black, biome, gofmt）
+nix fmt
+
+# 更新依赖
+nix flake update
+
+# 查看可用系统
+nix flake show
+
+# 构建测试（不激活）
+nixos-rebuild build --flake .#nixos-wsl
+
+# 配置差异检查
+nixos-rebuild dry-run --flake .#nixos-wsl
+
+# 交互式检查
+nix repl
+:lf .
+:p outputs.nixosConfigurations.nixos-wsl.config.services
+```
 
 ### 添加开发工具
 
@@ -451,18 +428,6 @@ eza --tree --level=3       # 目录树
 # 注意：NixOS 侧需在 hosts/nixos-desktop/default.nix 中手动导入
 ```
 
-### 添加系统服务
-
-```nix
-# 创建 modules/<category>/<name>.nix
-{
-  flake.modules.nixos.<module-name> = {
-    services.<service>.enable = true;
-  };
-}
-# 然后在 hosts/*/default.nix 中手动导入
-```
-
 ### 添加新主机
 
 ```nix
@@ -475,27 +440,24 @@ eza --tree --level=3       # 目录树
 # 5. host-machines.nix 自动检测 "hosts/" 前缀并注册到 nixosConfigurations/homeConfigurations
 ```
 
-### 部署命令
+---
 
+## Modern Toolchain（现代工具链）
+
+| 传统命令 | 现代替代 | 配置位置 |
+|---------|---------|---------|
+| `find` | `fd` | `modules/shell/fd.nix` |
+| `grep` | `rg` (ripgrep) | `modules/dev/ripgrep.nix` |
+| `ls` | `eza` | `modules/shell/eza.nix` |
+| `cat` | `bat` | `modules/shell/bat.nix` |
+| `cd` | `z` (zoxide) | `modules/shell/zoxide.nix` |
+| `tree` | `eza --tree` | `modules/shell/eza.nix` |
+
+### 使用示例
 ```bash
-sudo nixos-rebuild switch --flake .#nixos-wsl         # 部署 WSL
-sudo nixos-rebuild switch --flake .#nixos-desktop      # 部署桌面
-sudo nixos-rebuild switch --flake .#nixos-vm           # 部署 VM
-home-manager switch --flake .#hosts/fedora-wsl         # 部署独立 HM
-./scripts/deploy.sh --local nixos-desktop               # 本机 Live USB 安装 (disko)
-./scripts/deploy.sh nixos-vm 192.168.122.100            # 远程部署 (nixos-anywhere)
-nix fmt                                                 # 格式化
-nix flake check                                         # 语法检查
-```
-
-### 调试配置
-
-```bash
-nix eval .#nixosConfigurations.nixos-wsl      # 评估配置
-nix eval .#nixosConfigurations.nixos-desktop   # 评估桌面配置
-nix repl                                      # 交互式检查
-:lf .
-:p outputs.nixosConfigurations.nixos-wsl.config.services
+fd --extension nix        # 查找 .nix 文件
+rg "flake.modules"         # 搜索文本
+eza --tree --level=3       # 目录树
 ```
 
 ---
