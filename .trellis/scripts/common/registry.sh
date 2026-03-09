@@ -46,8 +46,8 @@ _ensure_registry() {
 
   mkdir -p "$agents_dir"
 
-  if [[ ! -f $registry_file ]]; then
-    echo '{"agents":[]}' >"$registry_file"
+  if [[ ! -f "$registry_file" ]]; then
+    echo '{"agents":[]}' > "$registry_file"
   fi
 }
 
@@ -63,13 +63,13 @@ registry_get_agent_by_id() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 1
   fi
 
   local agent=$(jq -c --arg id "$agent_id" '.agents[] | select(.id == $id)' "$registry_file" 2>/dev/null)
 
-  if [[ -n $agent ]] && [[ $agent != "null" ]]; then
+  if [[ -n "$agent" ]] && [[ "$agent" != "null" ]]; then
     echo "$agent"
     return 0
   fi
@@ -85,13 +85,13 @@ registry_get_agent_by_worktree() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 1
   fi
 
   local agent=$(jq -c --arg path "$worktree_path" '.agents[] | select(.worktree_path == $path)' "$registry_file" 2>/dev/null)
 
-  if [[ -n $agent ]] && [[ $agent != "null" ]]; then
+  if [[ -n "$agent" ]] && [[ "$agent" != "null" ]]; then
     echo "$agent"
     return 0
   fi
@@ -107,7 +107,7 @@ registry_search_agent() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 1
   fi
 
@@ -115,7 +115,7 @@ registry_search_agent() {
     '[.agents[] | select(.id == $search or (.task_dir | contains($search)))] | first' \
     "$registry_file" 2>/dev/null)
 
-  if [[ -n $agent ]] && [[ $agent != "null" ]]; then
+  if [[ -n "$agent" ]] && [[ "$agent" != "null" ]]; then
     echo "$agent"
     return 0
   fi
@@ -131,7 +131,7 @@ registry_get_task_dir() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 1
   fi
 
@@ -139,7 +139,7 @@ registry_get_task_dir() {
     '.agents[] | select(.worktree_path == $path) | .task_dir' \
     "$registry_file" 2>/dev/null)
 
-  if [[ -n $task_dir ]] && [[ $task_dir != "null" ]]; then
+  if [[ -n "$task_dir" ]] && [[ "$task_dir" != "null" ]]; then
     echo "$task_dir"
     return 0
   fi
@@ -159,7 +159,7 @@ registry_remove_by_id() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 0
   fi
 
@@ -167,7 +167,7 @@ registry_remove_by_id() {
     '.agents = [.agents[] | select(.id != $id)]' \
     "$registry_file")
 
-  echo "$updated" | jq '.' >"$registry_file"
+  echo "$updated" | jq '.' > "$registry_file"
   return 0
 }
 
@@ -179,7 +179,7 @@ registry_remove_by_worktree() {
   local repo_root="${2:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     return 0
   fi
 
@@ -187,7 +187,7 @@ registry_remove_by_worktree() {
     '.agents = [.agents[] | select(.worktree_path != $path)]' \
     "$registry_file")
 
-  echo "$updated" | jq '.' >"$registry_file"
+  echo "$updated" | jq '.' > "$registry_file"
   return 0
 }
 
@@ -227,7 +227,7 @@ registry_add_agent() {
     }')
 
   # Add to registry
-  echo "$registry" | jq --argjson agent "$new_agent" '.agents += [$agent]' >"$registry_file"
+  echo "$registry" | jq --argjson agent "$new_agent" '.agents += [$agent]' > "$registry_file"
   return 0
 }
 
@@ -238,7 +238,7 @@ registry_list_agents() {
   local repo_root="${1:-$(get_repo_root)}"
   local registry_file=$(registry_get_file "$repo_root")
 
-  if [[ ! -f $registry_file ]]; then
+  if [[ ! -f "$registry_file" ]]; then
     echo '[]'
     return 0
   fi

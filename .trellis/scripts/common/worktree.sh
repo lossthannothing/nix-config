@@ -52,22 +52,22 @@ _yaml_get_list() {
   local in_section=0
 
   while IFS= read -r line; do
-    if [[ $line =~ ^${section}: ]]; then
+    if [[ "$line" =~ ^${section}: ]]; then
       in_section=1
       continue
     fi
 
     if [ $in_section -eq 1 ]; then
       # Exit when encountering new top-level key
-      if [[ $line =~ ^[a-z_]+: ]] && [[ ! $line =~ ^[[:space:]] ]]; then
+      if [[ "$line" =~ ^[a-z_]+: ]] && [[ ! "$line" =~ ^[[:space:]] ]]; then
         break
       fi
       # Read list item
-      if [[ $line =~ ^[[:space:]]*-[[:space:]](.+)$ ]]; then
+      if [[ "$line" =~ ^[[:space:]]*-[[:space:]](.+)$ ]]; then
         echo "${BASH_REMATCH[1]}" | tr -d '"' | tr -d "'"
       fi
     fi
-  done <"$config"
+  done < "$config"
 }
 
 # Get worktree base directory
@@ -84,7 +84,7 @@ get_worktree_base_dir() {
   fi
 
   # Handle relative path
-  if [[ $worktree_dir == ../* ]] || [[ $worktree_dir == ./* ]]; then
+  if [[ "$worktree_dir" == ../* ]] || [[ "$worktree_dir" == ./* ]]; then
     # Relative to repo_root
     echo "$repo_root/$worktree_dir"
   else
@@ -122,7 +122,7 @@ get_agents_dir() {
   local repo_root="${1:-$(get_repo_root)}"
   local workspace_dir=$(get_workspace_dir "$repo_root")
 
-  if [[ -n $workspace_dir ]]; then
+  if [[ -n "$workspace_dir" ]]; then
     echo "$workspace_dir/.agents"
   fi
 }

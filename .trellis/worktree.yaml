@@ -6,8 +6,10 @@
 #-------------------------------------------------------------------------------
 # Paths
 #-------------------------------------------------------------------------------
+
 # Worktree storage directory (relative to project root)
 worktree_dir: ../trellis-worktrees
+
 #-------------------------------------------------------------------------------
 # Files to Copy
 #-------------------------------------------------------------------------------
@@ -20,6 +22,7 @@ copy:
   # - .env.local
   # Workflow config
   - .trellis/.developer
+
 #-------------------------------------------------------------------------------
 # Post-Create Hooks
 #-------------------------------------------------------------------------------
@@ -27,10 +30,10 @@ copy:
 # Commands to run after creating worktree
 # Executed in worktree directory, in order, abort on failure
 post_create:
-# Install dependencies (uncomment based on your package manager)
-# - npm install
-# - pnpm install --frozen-lockfile
-# - yarn install --frozen-lockfile
+  # Install dependencies (uncomment based on your package manager)
+  # - npm install
+  # - pnpm install --frozen-lockfile
+  # - yarn install --frozen-lockfile
 
 #-------------------------------------------------------------------------------
 # Check Agent Verification (Ralph Loop)
@@ -39,7 +42,34 @@ post_create:
 # Commands to verify code quality before allowing check agent to finish
 # If configured, Ralph Loop will run these commands - all must pass to allow completion
 # If not configured or empty, trusts agent's completion markers
+#
+# NIX PROJECT SOP:
+# 1. Check if nix command is available (means we're in NixOS or have nix package manager)
+# 2. If nix is available:
+#    - Check if flake and nix-command features are enabled
+#    - If not enabled, suggest: export NIX_CONFIG="experimental-features = nix-command flakes"
+#    - Run: nix flake check
+#    - Run: nix fmt -- --check (verify formatting)
+# 3. If nix is NOT available:
+#    - This means we're in a non-Nix environment (pure development mode)
+#    - DO NOT attempt to run nix commands
+#    - Continue with development and document the limitation
+#    - The next user to open this project should be notified about the Nix environment status
+#
+# [!] IMPORTANT: Always check for nix availability before running any nix commands
+# [!] DO NOT fail the verification if nix is not available - this is an expected scenario
 verify:
-
-# - pnpm lint
-# - pnpm typecheck
+  # Check nix availability and run appropriate verification
+  - |
+    if command -v nix &> /dev/null; then
+      echo "[Nix SOP] Nix detected, enabling flake and nix-command features..."
+      export NIX_CONFIG="experimental-features = nix-command flakes"
+      echo "[Nix SOP] Running: nix flake check"
+      nix flake check
+      echo "[Nix SOP] Running: nix fmt -- --check"
+      nix fmt -- --check
+    else
+      echo "[Nix SOP] Nix not available - running in non-Nix environment"
+      echo "[Nix SOP] Development continues without Nix verification"
+      echo "[Nix SOP] NOTICE: Next user opening this project should be informed about Nix environment status"
+    fi

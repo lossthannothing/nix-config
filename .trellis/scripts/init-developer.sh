@@ -14,7 +14,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/common/paths.sh"
 source "$SCRIPT_DIR/common/developer.sh"
 
-if [[ -z $1 ]]; then
+if [[ -z "$1" ]]; then
   echo "Usage: $0 <developer-name>"
   echo ""
   echo "Example:"
@@ -24,7 +24,7 @@ fi
 
 # Check if already initialized
 existing=$(get_developer)
-if [[ -n $existing ]]; then
+if [[ -n "$existing" ]]; then
   echo "Developer already initialized: $existing"
   echo ""
   echo "To reinitialize, remove $DIR_WORKFLOW/$FILE_DEVELOPER first"

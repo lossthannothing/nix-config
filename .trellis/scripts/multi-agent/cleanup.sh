@@ -51,26 +51,26 @@ KEEP_BRANCH=false
 POSITIONAL_ARGS=()
 while [[ $# -gt 0 ]]; do
   case $1 in
-  -y | --yes)
-    SKIP_CONFIRM=true
-    shift
-    ;;
-  --keep-branch)
-    KEEP_BRANCH=true
-    shift
-    ;;
-  --list | --merged | --all)
-    ACTION="${1#--}"
-    shift
-    ;;
-  -*)
-    log_error "Unknown option: $1"
-    exit 1
-    ;;
-  *)
-    POSITIONAL_ARGS+=("$1")
-    shift
-    ;;
+    -y|--yes)
+      SKIP_CONFIRM=true
+      shift
+      ;;
+    --keep-branch)
+      KEEP_BRANCH=true
+      shift
+      ;;
+    --list|--merged|--all)
+      ACTION="${1#--}"
+      shift
+      ;;
+    -*)
+      log_error "Unknown option: $1"
+      exit 1
+      ;;
+    *)
+      POSITIONAL_ARGS+=("$1")
+      shift
+      ;;
   esac
 done
 
@@ -122,15 +122,15 @@ archive_task() {
   # Parse result and log
   echo "$result" | while IFS= read -r line; do
     case "$line" in
-    task_completed:*)
-      log_info "Completed task: ${line#task_completed:}"
-      ;;
-    archived_to:*)
-      local dest="${line#archived_to:}"
-      local task_name=$(basename "$dest")
-      local month_dir=$(dirname "$dest")
-      log_success "Archived task: $task_name -> $(basename "$month_dir")/"
-      ;;
+      task_completed:*)
+        log_info "Completed task: ${line#task_completed:}"
+        ;;
+      archived_to:*)
+        local dest="${line#archived_to:}"
+        local task_name=$(basename "$dest")
+        local month_dir=$(dirname "$dest")
+        log_success "Archived task: $task_name -> $(basename "$month_dir")/"
+        ;;
     esac
   done
 }
@@ -180,10 +180,10 @@ cleanup_registry_only() {
   else
     local task_dir_abs="${PROJECT_ROOT}/${task_dir}"
     if [ -d "$task_dir_abs" ]; then
-      local result=$(archive_task_complete "$task_dir_abs" "$PROJECT_ROOT")
+    local result=$(archive_task_complete "$task_dir_abs" "$PROJECT_ROOT")
 
-      echo "$result" | while IFS= read -r line; do
-        case "$line" in
+    echo "$result" | while IFS= read -r line; do
+      case "$line" in
         task_completed:*)
           log_info "Completed task: ${line#task_completed:}"
           ;;
@@ -192,8 +192,8 @@ cleanup_registry_only() {
           local task_name=$(basename "$dest")
           log_success "Archived task: $task_name -> archive/$(basename "$(dirname "$dest")")/"
           ;;
-        esac
-      done
+      esac
+    done
     fi
   fi
 
@@ -292,7 +292,7 @@ cmd_merged() {
       worktree_branches="$worktree_branches $branch"
       echo "  - $branch"
     fi
-  done <<<"$merged_branches"
+  done <<< "$merged_branches"
 
   if [ -z "$worktree_branches" ]; then
     log_info "No merged worktrees found"
@@ -338,7 +338,7 @@ cmd_all() {
 
   while IFS= read -r wt; do
     echo "  - $wt"
-  done <<<"$worktrees"
+  done <<< "$worktrees"
 
   echo ""
 
@@ -362,35 +362,35 @@ cmd_all() {
     if [ -n "$branch" ]; then
       cleanup_worktree "$branch"
     fi
-  done <<<"$worktrees"
+  done <<< "$worktrees"
 }
 
 # =============================================================================
 # Main
 # =============================================================================
 case "${ACTION:-}" in
-list)
-  cmd_list
-  ;;
-merged)
-  cmd_merged
-  ;;
-all)
-  cmd_all
-  ;;
-*)
-  if [ ${#POSITIONAL_ARGS[@]} -eq 0 ]; then
-    echo "Usage:"
-    echo "  $0 <branch-name>      Remove specific worktree"
-    echo "  $0 --list             List all worktrees"
-    echo "  $0 --merged           Remove merged worktrees"
-    echo "  $0 --all              Remove all worktrees"
-    echo ""
-    echo "Options:"
-    echo "  -y, --yes             Skip confirmation"
-    echo "  --keep-branch         Don't delete git branch"
-    exit 1
-  fi
-  cleanup_worktree "${POSITIONAL_ARGS[0]}"
-  ;;
+  list)
+    cmd_list
+    ;;
+  merged)
+    cmd_merged
+    ;;
+  all)
+    cmd_all
+    ;;
+  *)
+    if [ ${#POSITIONAL_ARGS[@]} -eq 0 ]; then
+      echo "Usage:"
+      echo "  $0 <branch-name>      Remove specific worktree"
+      echo "  $0 --list             List all worktrees"
+      echo "  $0 --merged           Remove merged worktrees"
+      echo "  $0 --all              Remove all worktrees"
+      echo ""
+      echo "Options:"
+      echo "  -y, --yes             Skip confirmation"
+      echo "  --keep-branch         Don't delete git branch"
+      exit 1
+    fi
+    cleanup_worktree "${POSITIONAL_ARGS[0]}"
+    ;;
 esac

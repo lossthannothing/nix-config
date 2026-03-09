@@ -12,3 +12,8 @@
 .claude/
 .cunzhi-memory/
 .spec-workflow/
+
+# Reference repositories (auto-managed)
+.ref/
+!.ref/README.md
+!.ref/*.example.sh
