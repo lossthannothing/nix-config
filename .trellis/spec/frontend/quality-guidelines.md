@@ -1,51 +1,136 @@
-# Quality Guidelines
+# Code Quality Guidelines
 
-> Code quality standards for frontend development.
+> Tools and practices for maintaining Nix code quality.
 
 ---
 
 ## Overview
 
-<!--
-Document your project's quality standards here.
-
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
-
-(To be filled by the team)
+This project uses a comprehensive quality toolchain configured via `treefmt-nix` in `modules/flake-parts/fmt.nix`. All checks run with `nix fmt` and `nix flake check`.
 
 ---
 
-## Forbidden Patterns
+## Quality Toolchain
 
-<!-- Patterns that should never be used and why -->
+### Nix-Specific Tools
 
-(To be filled by the team)
+| Tool | Purpose | What It Catches |
+|------|---------|----------------|
+| **alejandra** | Nix formatter | Inconsistent formatting, indentation |
+| **deadnix** | Dead code detector | Unused variables, unused `inherit`, unused function args |
+| **statix** | Nix linter | Anti-patterns, deprecated features, style issues |
+
+### Other Formatters (For Non-Nix Files)
+
+| Tool | Languages |
+|------|-----------|
+| shfmt + shellcheck | Shell scripts |
+| rustfmt | Rust |
+| black + ruff | Python |
+| gofmt + gofumpt | Go |
+| biome | JavaScript/TypeScript |
+| yamlfmt | YAML |
+| jsonfmt | JSON |
+
+### Excluded from Formatting
+
+- `*.md` files
+- `.trellis/**` directory
+- `*.task.json` files
+- `LICENSE`
 
 ---
 
-## Required Patterns
+## Required Checks Before Commit
 
-<!-- Patterns that must always be used -->
+```bash
+# Format all code (must pass)
+nix fmt
 
-(To be filled by the team)
+# Validate flake configuration (must pass)
+nix flake check
+```
 
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
+**Both commands must pass before any commit.**
 
 ---
 
-## Code Review Checklist
+## Code Style Rules
 
-<!-- What reviewers should check -->
+### Formatting (Enforced by alejandra)
 
-(To be filled by the team)
+- Alejandra is an opinionated formatter — do not fight it
+- Let alejandra handle all indentation and line breaks
+- Run `nix fmt` after every edit
+
+### Dead Code (Enforced by deadnix)
+
+```nix
+# BAD: unused inherit
+{ pkgs, lib, ... }: {  # lib is unused
+  home.packages = [pkgs.git];
+}
+
+# GOOD: only destructure what you use
+{ pkgs, ... }: {
+  home.packages = [pkgs.git];
+}
+```
+
+### Anti-Patterns (Enforced by statix)
+
+```nix
+# BAD: unnecessary let-in
+let
+  x = 1;
+in {
+  value = x;
+}
+
+# GOOD: inline when simple
+{
+  value = 1;
+}
+```
+
+---
+
+## Quality Checklist
+
+Before committing any Nix module change:
+
+- [ ] `nix fmt` passes with no changes
+- [ ] `nix flake check` passes
+- [ ] No unused variables (deadnix)
+- [ ] Module follows the correct pattern (A-E) for its needs
+- [ ] Namespace follows naming conventions (see hook-guidelines.md)
+- [ ] If dual-register: system config in nixos.*, user config in homeManager.*
+
+---
+
+## Common Mistakes
+
+| Mistake | How to Fix |
+|---------|-----------|
+| Committing without running `nix fmt` | Always run `nix fmt` before commit |
+| Unused function parameters | Remove unused params or use `_` |
+| Using `with pkgs;` everywhere | Explicit `pkgs.name` is preferred for clarity |
+| Not running `nix flake check` | Always validate — catches type errors and eval failures |
+| Ignoring statix warnings | Address them — they catch real anti-patterns |
+
+---
+
+## Debugging Build Failures
+
+```bash
+# Build without activating (safe to test)
+nixos-rebuild build --flake .#nixos-wsl
+
+# Dry-run to see what would change
+nixos-rebuild dry-run --flake .#nixos-wsl
+
+# Interactive REPL for debugging
+nix repl
+:lf .
+:p outputs.nixosConfigurations.nixos-wsl.config.services
+```

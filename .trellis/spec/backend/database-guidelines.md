@@ -1,51 +1,125 @@
-# Database Guidelines
+# Deployment Guidelines
 
-> Database patterns and conventions for this project.
+> How to deploy NixOS and Home Manager configurations.
 
 ---
 
 ## Overview
 
-<!--
-Document your project's database conventions here.
-
-Questions to answer:
-- What ORM/query library do you use?
-- How are migrations managed?
-- What are the naming conventions for tables/columns?
-- How do you handle transactions?
--->
-
-(To be filled by the team)
+This project supports multiple deployment methods through `scripts/deploy.sh`. The deploy script provides an interactive menu for common operations and CLI flags for automation.
 
 ---
 
-## Query Patterns
+## Deployment Methods
 
-<!-- How should queries be written? Batch operations? -->
+### Interactive Menu (Recommended for Daily Use)
 
-(To be filled by the team)
+```bash
+./scripts/deploy.sh
+```
+
+Presents a menu with all available hosts and operations.
+
+### NixOS System Rebuild
+
+```bash
+# Rebuild and switch to new configuration
+sudo nixos-rebuild switch --flake .#nixos-wsl
+sudo nixos-rebuild switch --flake .#nixos-desktop
+sudo nixos-rebuild switch --flake .#nixos-vm
+```
+
+### Home Manager Standalone Deploy
+
+```bash
+# For non-NixOS hosts (e.g., Fedora WSL)
+home-manager switch --flake .#hosts/fedora-wsl
+```
+
+### Live USB Installation (New Machine)
+
+```bash
+# Uses disko for declarative disk partitioning
+./scripts/deploy.sh --local nixos-desktop
+```
+
+### Remote Deployment (via nixos-anywhere)
+
+```bash
+# Deploy to a remote machine
+./scripts/deploy.sh nixos-vm 192.168.122.100
+```
 
 ---
 
-## Migrations
+## Pre-Deployment Checklist
 
-<!-- How to create and run migrations -->
+Before deploying to any target:
 
-(To be filled by the team)
+- [ ] `nix fmt` passes (code is formatted)
+- [ ] `nix flake check` passes (configuration is valid)
+- [ ] Changes are committed (for reproducibility)
+- [ ] Tested with `nixos-rebuild build --flake .#<host>` first
+
+### Build Without Activating (Safe Test)
+
+```bash
+# Just build, don't activate
+nixos-rebuild build --flake .#nixos-wsl
+
+# See what would change
+nixos-rebuild dry-run --flake .#nixos-wsl
+```
 
 ---
 
-## Naming Conventions
+## Available Hosts
 
-<!-- Table names, column names, index names -->
+| Host | Type | Target |
+|------|------|--------|
+| `nixos-wsl` | NixOS | Windows WSL environment |
+| `nixos-desktop` | NixOS | Physical desktop machine |
+| `nixos-vm` | NixOS | Virtual machine (testing) |
+| `hosts/fedora-wsl` | Standalone HM | Fedora WSL environment |
 
-(To be filled by the team)
+---
+
+## Dependency Updates
+
+```bash
+# Update all flake inputs
+nix flake update
+
+# Update a specific input
+nix flake update <input-name>
+```
+
+After updating, always rebuild and test before committing the new `flake.lock`.
+
+---
+
+## Network Proxy (WSL-Specific)
+
+In WSL environments, the Bash shell is non-interactive and needs explicit proxy configuration:
+
+```bash
+# Use the proxy wrapper script
+/home/loss/nix-config/scripts/proxy-wrapper.sh git push
+
+# Or set environment variables directly
+HOST=$(ip route | awk '/default/ {print $3; exit}') && \
+  http_proxy="http://${HOST}:7890" \
+  https_proxy="http://${HOST}:7890" \
+  curl https://example.com
+```
 
 ---
 
 ## Common Mistakes
 
-<!-- Database-related mistakes your team has made -->
-
-(To be filled by the team)
+| Mistake | Correct Approach |
+|---------|-----------------|
+| Deploying without `nix flake check` | Always validate first |
+| Using raw `nixos-rebuild` in WSL | Use `./scripts/deploy.sh` which handles proxy |
+| Forgetting to commit before deploy | Uncommitted changes may not be picked up |
+| Updating `flake.lock` without testing | Always build and test after `nix flake update` |

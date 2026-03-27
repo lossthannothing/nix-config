@@ -1,39 +1,50 @@
-# Frontend Development Guidelines
+# Nix Module Development Guidelines
 
-> Best practices for frontend development in this project.
+> Best practices for writing Nix modules in this flake-parts project.
 
 ---
 
 ## Overview
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+This directory contains guidelines for developing Nix modules — the **capability layer** of the project's three-layer architecture. Modules live in `modules/` and define reusable NixOS and Home Manager configurations.
+
+**Key concepts:**
+- Modules register to `flake.modules.nixos.*` or `flake.modules.homeManager.*` namespaces
+- Multiple files can contribute to the same namespace (auto-merge)
+- `import-tree` automatically discovers all `.nix` files — no manual import lists
+- Hosts assemble modules by referencing their namespace names
 
 ---
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| Guide | Description |
+|-------|-------------|
+| [Directory Structure](./directory-structure.md) | Module directory layout and file organization |
+| [Module Patterns](./component-guidelines.md) | The 5 module writing patterns used in this project |
+| [Namespace & Auto-Merge](./hook-guidelines.md) | Namespace naming rules and auto-merge behavior |
+| [Inputs & Cross-Layer](./state-management.md) | Using flake inputs and cross-layer references |
+| [Quality Guidelines](./quality-guidelines.md) | Code quality tools: alejandra, deadnix, statix |
+| [Type Safety](./type-safety.md) | Nix type system and option definitions |
 
 ---
 
-## How to Fill These Guidelines
+## Quick Reference
 
-For each guideline file:
+### Adding a new module
 
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
+1. Create `modules/<category>/<name>.nix`
+2. Register to appropriate namespace: `flake.modules.nixos.<name>` or `flake.modules.homeManager.<category>`
+3. Run `nix fmt` and `nix flake check`
+4. Add to host imports if NixOS namespace (HM namespaces auto-merge)
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+### Critical rules
+
+- **NixOS namespaces** = fine-grained (one per feature): `nixos.audio`, `nixos.nvidia`
+- **HM namespaces** = domain-aggregated (many files per namespace): `homeManager.shell`, `homeManager.dev`
+- **Never** manually list imports in `flake.nix` — `import-tree` handles discovery
+- **Always** run `nix fmt` before committing
 
 ---
 
-**Language**: All documentation should be written in **English**.
+**Language**: All documentation is written in **English**.

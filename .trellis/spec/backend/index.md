@@ -1,38 +1,50 @@
-# Backend Development Guidelines
+# Host Configuration & Infrastructure Guidelines
 
-> Best practices for backend development in this project.
+> Best practices for host assembly and flake-parts infrastructure.
 
 ---
 
 ## Overview
 
-This directory contains guidelines for backend development. Fill in each file with your project's specific conventions.
+This directory contains guidelines for the **instance layer** (hosts) and **mechanism layer** (flake-parts infrastructure). Hosts assemble modules into deployable configurations. The flake-parts infrastructure provides the framework that makes everything work.
+
+**Key concepts:**
+- Hosts live in `hosts/` and compose modules by namespace references
+- `host-machines.nix` is the engine that transforms hosts into `nixosConfigurations`
+- flake-parts infrastructure in `modules/flake-parts/` should rarely be modified
+- Deployment uses `scripts/deploy.sh` for all scenarios
 
 ---
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Database Guidelines](./database-guidelines.md) | ORM patterns, queries, migrations | To fill |
-| [Error Handling](./error-handling.md) | Error types, handling strategies | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Logging Guidelines](./logging-guidelines.md) | Structured logging, log levels | To fill |
+| Guide | Description |
+|-------|-------------|
+| [Directory Structure](./directory-structure.md) | hosts/ and flake-parts/ layout |
+| [Deployment Guidelines](./database-guidelines.md) | Deployment methods, scripts, and procedures |
+| [Troubleshooting](./error-handling.md) | Common errors and debugging techniques |
+| [Infrastructure Quality](./quality-guidelines.md) | Validation, testing, and review checklist |
+| [Build & Debug](./logging-guidelines.md) | Build system, REPL debugging, proxy config |
 
 ---
 
-## How to Fill These Guidelines
+## Quick Reference
 
-For each guideline file:
+### Adding a new host
 
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
+1. Create `hosts/<hostname>/default.nix`
+2. Register to `flake.modules.nixos."hosts/<hostname>"` or `flake.modules.homeManager."hosts/<hostname>"`
+3. Compose modules via `imports = with config.flake.modules.nixos; [ ... ]`
+4. Run `nix flake check` to validate
+5. Deploy with `./scripts/deploy.sh`
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+### Critical rules
+
+- **Never** modify `modules/flake-parts/` without review approval
+- **Always** validate with `nix flake check` before deploying
+- **Always** use `./scripts/deploy.sh` for deployment (not raw nixos-rebuild)
+- Host files should be thin — mostly `imports` + host-specific overrides
 
 ---
 
-**Language**: All documentation should be written in **English**.
+**Language**: All documentation is written in **English**.
