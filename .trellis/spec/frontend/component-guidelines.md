@@ -1,88 +1,80 @@
 # Module Patterns
 
-> The 5 standard patterns for writing Nix modules in this project.
+> The 5 standard patterns for writing aspects in the vic/den framework.
 
 ---
 
 ## Overview
 
-Every module in this project follows one of 5 patterns. Choose the simplest pattern that meets your needs — complexity should be added only when required.
+Every aspect in this project follows one of 5 patterns. Choose the simplest pattern that meets your needs.
 
 **Pattern selection flow:**
-1. Need system config only? -> **Pattern A** (pure config) or **Pattern B** (needs pkgs/lib)
-2. Need both system + user config? -> **Pattern C** (dual-register)
-3. Need external flake inputs? -> **Pattern D** (inputs pattern)
-4. Need to read flake-level metadata? -> **Pattern E** (topLevel pattern)
+1. Global defaults? -> **Pattern A** (den.default)
+2. User definition? -> **Pattern B** (den.aspects.user)
+3. Reusable aspect? -> **Pattern C** (namespace.aspect)
+4. Sub-aspect (hierarchical)? -> **Pattern D** (namespace.parent._.child)
+5. Host definition? -> **Pattern E** (den.hosts + den.aspects.host)
 
 ---
 
-## Pattern A: Pure Config (Simplest)
+## Pattern A: Global Defaults
 
-**When**: Static configuration with no package references or lib functions.
-
-```nix
-# modules/base/i18n.nix
-{
-  flake.modules.nixos.base = {
-    i18n.defaultLocale = "zh_CN.UTF-8";
-  };
-}
-```
-
-**Key traits:**
-- Top-level is `{}` or has no parameters
-- Direct assignment to `flake.modules.<type>.<namespace> = { ... };`
-- No function, no pkgs, no lib
-
-**Real examples**: `base/i18n.nix`, `base/time/default.nix`
-
----
-
-## Pattern B: Single Namespace + pkgs/lib
-
-**When**: Need to reference packages or use lib functions.
+**When**: Configuration that applies to ALL hosts and users.
 
 ```nix
-# modules/shell/fzf.nix
-{
-  flake.modules.homeManager.shell = { pkgs, lib, ... }: {
-    programs.fzf = {
-      enable = true;
-      defaultCommand = "${lib.getExe pkgs.fd} --type f";
+# modules/default.nix
+{ inputs, __findFile, ... }: {
+  den.default = {
+    includes = [
+      <den/home-manager>
+      <den/define-user>
+    ];
+
+    nixos = { pkgs, ... }: {
+      nixpkgs.config.allowUnfree = true;
+      nix.settings.experimental-features = [ "nix-command" "flakes" ];
+    };
+
+    homeManager = { ... }: {
+      programs.home-manager.enable = true;
     };
   };
 }
 ```
 
 **Key traits:**
-- Module value is a function: `{ pkgs, lib, ... }: { ... }`
-- Destructure only what you need (pkgs, lib, config, etc.)
-- Top-level file is still `{}` (no flake-parts parameters needed)
-
-**Real examples**: `shell/zsh.nix`, `shell/bat.nix`, `desktop/theming.nix`
+- Registered to `den.default`
+- Uses `includes` to pull in den framework modules
+- Defines both `nixos` and `homeManager` sections
+- Applies to all hosts automatically
 
 ---
 
-## Pattern C: Dual-Register (nixos + homeManager)
+## Pattern B: User Aspect
 
-**When**: A feature needs both system-level (drivers, services, PAM) and user-level (dotfiles, env vars) configuration.
+**When**: Defining a user account and their default aspects.
 
 ```nix
-# modules/desktop/fcitx5.nix
-{
-  flake.modules = {
-    nixos.fcitx5 = { pkgs, ... }: {
-      i18n.inputMethod = {
-        type = "fcitx5";
-        fcitx5.addons = with pkgs; [
-          fcitx5-chinese-addons
-          fcitx5-rime
-        ];
+# modules/loss.nix
+{ __findFile, ... }: {
+  den.aspects.loss = {
+    includes = [
+      <den/primary-user>
+      <loss/shell>
+      <loss/dev>
+    ];
+
+    nixos = {
+      users.users.loss = {
+        isNormalUser = true;
+        extraGroups = [ "wheel" "networkmanager" ];
       };
     };
-    homeManager.desktop = {
-      home.sessionVariables = {
-        GLFW_IM_MODULE = "ibus";
+
+    homeManager = {
+      home = {
+        username = "loss";
+        homeDirectory = "/home/loss";
       };
     };
   };
@@ -90,85 +82,168 @@ Every module in this project follows one of 5 patterns. Choose the simplest patt
 ```
 
 **Key traits:**
-- `flake.modules = { nixos.X = ...; homeManager.Y = ...; };`
-- NixOS part handles: PAM, drivers, services, system packages
-- HM part handles: dotfiles, environment variables, user programs
-- NixOS and HM namespaces can differ (e.g., `nixos.fcitx5` + `homeManager.desktop`)
-
-**Real examples**: `wsl/default.nix`, `desktop/fcitx5.nix`, `desktop/swaylock.nix`, `desktop/fonts.nix`, `base/nix.nix`
-
-**This is the project's signature pattern** — use it whenever a feature has both system and user aspects.
+- Registered to `den.aspects.<username>`
+- Uses `<den/primary-user>` for common user setup
+- Includes user-specific aspects via `<namespace/aspect>`
+- **Never** includes host binding here — that goes in host config
 
 ---
 
-## Pattern D: Inputs Pattern (External Flake Modules)
+## Pattern C: Reusable Aspect
 
-**When**: Need to import modules or overlays from flake inputs.
+**When**: Creating a reusable configuration module.
 
 ```nix
-# modules/dev/languages/rust.nix
+# modules/shell.nix
+{ loss.shell.homeManager = { pkgs, lib, ... }: {
+  programs.zsh = {
+    enable = true;
+    autosuggestion.enable = true;
+  };
+
+  programs.starship = {
+    enable = true;
+    enableZshIntegration = true;
+  };
+};}
+```
+
+**Key traits:**
+- Registered to custom namespace (e.g., `loss.shell`)
+- Can be `nixos`, `homeManager`, or both
+- Referenced via `<namespace/aspect>` in includes
+
+---
+
+## Pattern D: Sub-Aspect (Hierarchical)
+
+**When**: Creating a child aspect under a parent (e.g., language under dev).
+
+```nix
+# modules/dev/rust.nix
 { inputs, ... }: {
-  flake.modules = {
-    nixos.rust = {
-      nixpkgs.overlays = [inputs.rust-overlay.overlays.default];
+  loss.dev._.rust = {
+    nixos = {
+      nixpkgs.overlays = [ inputs.rust-overlay.overlays.default ];
     };
-    homeManager.dev = { pkgs, ... }: {
-      home.packages = [pkgs.rust-bin.stable.latest.default];
+
+    homeManager = { pkgs, ... }: {
+      home.packages = [ pkgs.rust-bin.stable.latest.default ];
     };
   };
 }
 ```
 
 **Key traits:**
-- Top-level function: `{ inputs, ... }:` — this is a **flake-parts module** parameter, NOT a NixOS module parameter
-- Use `inputs.<name>.nixosModules.*`, `inputs.<name>.overlays.*`, etc.
-- Often combined with Pattern C (dual-register)
+- Uses `._.` pattern: `namespace.parent._.child`
+- `._` is the `provides` alias in den/flake-aspects
+- Referenced as `parent._.child` in includes
 
-**Real examples**: `desktop/niri.nix`, `dev/languages/rust.nix`, `base/disko.nix`
-
-**Critical distinction**: `{ inputs, ... }:` at file top-level = flake-parts parameter. `{ pkgs, config, ... }:` inside namespace value = NixOS/HM module parameter.
+**Usage in host:**
+```nix
+includes = with loss; [
+  dev           # Parent aspect
+  dev._.rust    # Sub-aspect
+];
+```
 
 ---
 
-## Pattern E: TopLevel Pattern (Cross-Layer Reference)
+## Pattern E: Host Definition
 
-**When**: Need to read flake-level configuration like `config.flake.meta`.
+**When**: Defining a host and composing its aspects.
 
 ```nix
-# modules/dev/git.nix
-topLevel: {
-  flake.modules.homeManager.dev = { config, ... }: {
-    programs.git.settings.user = {
-      inherit (topLevel.config.flake.meta.users.${config.home.username}) name;
+# modules/hosts/nixos-wsl/default.nix
+{ loss, ... }: {
+  # Host registration
+  den.hosts.x86_64-linux.nixos-wsl = {};
+
+  # Host aspect composition
+  den.aspects.nixos-wsl = {
+    includes = with loss; [
+      wsl
+      shell
+      dev
+      dev._.rust
+      dev._.javascript
+      dev._.go
+      dev._.python
+      dev._.nix
+    ];
+
+    nixos = { ... }: {
+      wsl.defaultUser = "loss";
+      wsl.docker-desktop.enable = true;
     };
   };
 }
 ```
 
 **Key traits:**
-- Top-level parameter explicitly named `topLevel` (not destructured)
-- Access flake-level data via `topLevel.config.flake.*`
-- Used when module config depends on project metadata
-
-**Real examples**: `users/loss/default.nix`, `dev/git.nix`
-
-**When NOT to use**: If you just need `inputs`, use Pattern D instead. TopLevel is only for reading `config.flake.*` data.
+- Registers host via `den.hosts.<arch>.<hostname>`
+- Composes aspects via `includes`
+- Host-specific overrides go in `nixos`/`homeManager` sections
+- Uses `with loss;` for cleaner aspect references
 
 ---
 
 ## Pattern Selection Decision Tree
 
 ```
-Do you need packages (pkgs) or lib functions?
-  No  -> Pattern A (pure config)
-  Yes -> Do you need both NixOS and HM config?
-    No  -> Pattern B (single namespace + pkgs/lib)
-    Yes -> Do you need external flake inputs?
-      No  -> Pattern C (dual-register)
-      Yes -> Do you need flake-level metadata (config.flake.*)?
-        No  -> Pattern D (inputs) + Pattern C (dual-register)
-        Yes -> Pattern E (topLevel) + others as needed
+Is this global configuration (applies to all hosts)?
+  Yes -> Pattern A (den.default)
+
+Is this a user account definition?
+  Yes -> Pattern B (den.aspects.user)
+
+Is this a host definition?
+  Yes -> Pattern E (den.hosts + den.aspects.host)
+
+Is this a child of another aspect?
+  Yes -> Pattern D (namespace.parent._.child)
+
+Otherwise -> Pattern C (namespace.aspect)
 ```
+
+---
+
+## Shared Constants Pattern
+
+**When**: Configuration values are used in multiple places.
+
+```nix
+# modules/default.nix
+{ inputs, __findFile, ... }: let
+  stateVersion = "25.11";
+
+  substituters = [
+    "https://nix-community.cachix.org"
+    "https://cache.nixos.org/"
+  ];
+
+  trustedPublicKeys = [
+    "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
+  ];
+in {
+  den.default = {
+    nixos = { ... }: {
+      system.stateVersion = stateVersion;
+      nix.settings = { inherit substituters trusted-public-keys; };
+    };
+
+    homeManager = { ... }: {
+      home.stateVersion = stateVersion;
+      nix.settings = { inherit substituters trusted-public-keys; };
+    };
+  };
+}
+```
+
+**Key traits:**
+- Use `let` bindings at file top
+- Reference via `inherit` or direct variable use
+- Single source of truth for repeated values
 
 ---
 
@@ -176,8 +251,18 @@ Do you need packages (pkgs) or lib functions?
 
 | Mistake | Correct Approach |
 |---------|-----------------|
-| Using `{ inputs, ... }:` to get pkgs | `inputs` is for flake inputs only. Use `{ pkgs, ... }:` inside namespace value |
-| Creating a new namespace for every file | HM namespaces are domain-aggregated. Multiple files write to `homeManager.shell` |
-| Putting host-specific config in module | Modules define capabilities. Host specifics go in `hosts/` |
-| Destructuring `{ inputs, ... }` when only needing pkgs | Only use inputs pattern when you actually need a flake input |
-| Using `topLevel` when `inputs` would suffice | `topLevel` is specifically for `config.flake.*` data |
+| Using `imports` instead of `includes` | Aspects use `includes` for composition |
+| Putting host binding in user module | Host binding belongs in `modules/hosts/*/default.nix` |
+| Using `loss.dev.rust` instead of `loss.dev._.rust` | Sub-aspects must use `._.` pattern |
+| Duplicating values across nixos/homeManager | Use `let` bindings and `inherit` |
+| Forgetting `{ inputs, ... }:` when using flake inputs | Add `inputs` parameter at file top |
+| Using `__findFile` without importing den module | `__findFile` is set in `den.nix` |
+
+---
+
+## Aspect Composition Rules
+
+1. **Parent before child**: Include parent aspect before sub-aspects
+2. **Order doesn't matter for siblings**: `dev._.rust` and `dev._.javascript` can be in any order
+3. **Use `with namespace;`**: Cleaner than repeating `namespace.` prefix
+4. **Angle-bracket imports**: Use `<namespace/aspect>` not relative paths

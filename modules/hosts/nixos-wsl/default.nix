@@ -7,9 +7,10 @@
 
   den.aspects.nixos-wsl = {
     includes = with loss; [
-      wsl
-      shell
-      dev
+      system._.wsl        # WSL system config
+      profiles.wsl        # WSL user preferences
+      shell               # Terminal ecosystem (aggregation)
+      dev._.tools         # Dev utilities (direnv, ripgrep, etc.)
       dev._.rust
       dev._.javascript
       dev._.go

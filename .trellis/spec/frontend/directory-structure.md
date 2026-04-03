@@ -1,12 +1,12 @@
 # Module Directory Structure
 
-> How Nix modules are organized in this project.
+> How Nix modules are organized in the vic/den framework.
 
 ---
 
 ## Overview
 
-All reusable configurations live in `modules/`. The `import-tree` flake input automatically discovers every `.nix` file recursively — no manual import lists needed. Each file registers its configuration to one or more `flake.modules.*` namespaces.
+All configurations live in `modules/`. The `import-tree` flake input automatically discovers every `.nix` file. Each file registers aspects to the `den.*` or custom namespaces (e.g., `loss.*`).
 
 ---
 
@@ -14,59 +14,76 @@ All reusable configurations live in `modules/`. The `import-tree` flake input au
 
 ```
 modules/
-|-- flake-parts/             # Framework infrastructure (DO NOT touch without review)
-|   |-- flake-parts.nix      # Enables flake.modules.* namespace options
-|   |-- flake.nix            # flake.meta option (user metadata)
-|   |-- host-machines.nix    # Core engine: hosts/ -> nixosConfigurations
-|   |-- nixpkgs.nix          # perSystem pkgs instance + overlays
-|   +-- fmt.nix              # treefmt-nix formatting (15+ tools)
-|-- base/                    # System & HM foundation
-|   |-- console/default.nix  # Shell/console setup
-|   |-- system/default.nix   # stateVersion
-|   |-- time/default.nix     # Timezone
-|   |-- disko.nix            # Declarative disk partitioning
-|   |-- facter.nix           # Hardware detection
-|   |-- home.nix             # HM base settings
-|   |-- i18n.nix             # Internationalization
-|   +-- nix.nix              # Nix daemon config (dual-register)
-|-- shell/                   # Shell tools (all -> homeManager.shell)
-|   |-- zsh.nix, starship.nix, fzf.nix, bat.nix, eza.nix, fd.nix,
-|   +-- yazi.nix, zoxide.nix, lstr.nix, nix-your-shell.nix, archive.nix
-|-- dev/                     # Dev tools (all -> homeManager.dev)
-|   |-- git.nix, direnv.nix, editors.nix, devenv.nix, just.nix,
-|   |-- ansible.nix, hyperfine.nix, ripgrep.nix
-|   +-- languages/           # Language toolchains
-|       +-- rust.nix, go.nix, javascript.nix, nix.nix, python.nix
-|-- desktop/                 # Desktop environment (dual-register: nixos.* + homeManager.desktop)
-|   +-- niri.nix, waybar.nix, alacritty.nix, audio.nix, bluetooth.nix,
-|       fcitx5.nix, fonts.nix, fuzzel.nix, media.nix, nvidia.nix,
-|       power.nix, screenshot.nix, swayidle.nix, swaylock.nix, swww.nix,
-|       theming.nix, wired-notify.nix, wlogout.nix, browser.nix
-|-- wsl/default.nix          # WSL config (dual-register: nixos.wsl + homeManager.wsl)
-+-- users/loss/default.nix   # User config (metadata + nixos user + HM user)
+├── den.nix                  # Framework init + "loss" namespace registration
+├── default.nix              # den.default — global defaults (nix, locale, HM)
+├── loss.nix                 # den.aspects.loss — user "loss" definition
+├── shell.nix                # loss.shell — shell tools (zsh, starship, etc.)
+├── dev.nix                  # loss.dev — dev tools (git, direnv, etc.)
+├── wsl.nix                  # loss.wsl — WSL platform aspect
+├── nixpkgs.nix              # perSystem pkgs + flake overlays
+├── formatter.nix            # treefmt-nix configuration
+├── dev/                     # Language-specific sub-aspects
+│   ├── rust.nix             # loss.dev._.rust
+│   ├── javascript.nix       # loss.dev._.javascript
+│   ├── go.nix               # loss.dev._.go
+│   ├── python.nix           # loss.dev._.python
+│   └── nix.nix              # loss.dev._.nix
+└── hosts/                   # Host definitions
+    └── nixos-wsl/
+        └── default.nix      # Host + aspect composition
 ```
+
+---
+
+## File Responsibilities
+
+| File | Namespace | Responsibility |
+|------|-----------|----------------|
+| `den.nix` | — | Load den flakeModule, register `loss` namespace, setup `__findFile` |
+| `default.nix` | `den.default` | Nix daemon, locale, timezone, HM integration, substituters |
+| `loss.nix` | `den.aspects.loss` | User account, home directory, aspect includes |
+| `shell.nix` | `loss.shell` | Shell tools (zsh, starship, bat, eza, fzf, etc.) |
+| `dev.nix` | `loss.dev` | Dev tools (git, direnv, editors, ripgrep) |
+| `wsl.nix` | `loss.wsl` | WSL system config + user aliases |
+| `dev/*.nix` | `loss.dev._.*` | Language-specific environments |
+| `hosts/*/default.nix` | `den.hosts.*` + `den.aspects.*` | Host definition + aspect composition |
 
 ---
 
 ## Organization Rules
 
-### When to create a new file vs. extend existing
+### When to create a new file
 
 | Situation | Action |
 |-----------|--------|
-| New independent tool/program | Create new file: `modules/<category>/<tool>.nix` |
-| Extension of existing feature | Edit existing file |
-| New language toolchain | Create `modules/dev/languages/<lang>.nix` |
-| Feature needing system + user config | Create dual-register file in appropriate category |
+| New user | Create `modules/<username>.nix` |
+| New platform aspect | Create `modules/<platform>.nix` (e.g., `wsl.nix`) |
+| New language environment | Create `modules/dev/<lang>.nix` |
+| New host | Create `modules/hosts/<hostname>/default.nix` |
 
 ### When to use subdirectories
 
-Use `<name>/default.nix` pattern (instead of `<name>.nix`) when:
-- The module needs auxiliary data files (e.g., `facter.json`)
-- The module is large enough to benefit from splitting (rare in this project)
-- Multiple related files compose a single feature
+Use `<name>/default.nix` pattern when:
+- The module needs auxiliary data files
+- The aspect is complex enough to benefit from splitting
 
-**Current examples**: `console/default.nix`, `system/default.nix`, `time/default.nix`, `wsl/default.nix`, `users/loss/default.nix`
+### Sub-aspect pattern
+
+For hierarchical aspects (e.g., language environments under dev):
+
+```nix
+# modules/dev/rust.nix
+loss.dev._.rust = { ... };  # Note the `._.` pattern
+```
+
+This is accessed via:
+```nix
+# modules/hosts/nixos-wsl/default.nix
+includes = with loss; [
+  dev
+  dev._.rust      # Sub-aspect reference
+];
+```
 
 ---
 
@@ -74,28 +91,73 @@ Use `<name>/default.nix` pattern (instead of `<name>.nix`) when:
 
 | Element | Convention | Examples |
 |---------|-----------|----------|
-| Module file | `<tool-or-feature>.nix` | `git.nix`, `audio.nix`, `rust.nix` |
-| Subdirectory module | `<feature>/default.nix` | `console/default.nix` |
-| Language toolchain | `languages/<lang>.nix` | `languages/rust.nix` |
-| Category directory | lowercase, singular noun | `shell/`, `dev/`, `desktop/` |
+| User aspect file | `<username>.nix` | `loss.nix` |
+| Platform aspect | `<platform>.nix` | `wsl.nix` |
+| Sub-aspect directory | `<parent>/` | `dev/` |
+| Sub-aspect file | `<parent>/<child>.nix` | `dev/rust.nix` |
+| Host directory | `hosts/<hostname>/` | `hosts/nixos-wsl/` |
 
 ---
 
 ## Forbidden Patterns
 
-- **Never** create a manual import list in `flake.nix` — `import-tree` handles this
-- **Never** put host-specific config in `modules/` — that belongs in `hosts/`
-- **Never** modify `modules/flake-parts/` without explicit review approval
-- **Never** create deeply nested directories (max 2 levels: `modules/dev/languages/`)
+- **Never** put host binding (`den.hosts.*.users.*`) in user modules — it belongs in host config
+- **Never** duplicate configuration values — use `let` bindings
+- **Never** hardcode user-specific values in shared modules
+- **Never** create deeply nested directories (max 2 levels)
 
 ---
 
-## Examples of Well-Organized Modules
+## Examples
 
-| Module | Why it's exemplary |
-|--------|-------------------|
-| `modules/base/i18n.nix` | Simplest pattern — 7 lines, pure config |
-| `modules/shell/fzf.nix` | Clean single-namespace HM module with pkgs |
-| `modules/wsl/default.nix` | Dual-register pattern (nixos + HM in one file) |
-| `modules/dev/languages/rust.nix` | Proper overlay injection via inputs |
-| `modules/dev/git.nix` | Cross-layer reference using topLevel pattern |
+### Aspect with shared constants
+
+```nix
+# modules/wsl.nix
+{ inputs, ... }: let
+  winUser = "Lossilklauralin";  # Single source of truth
+in {
+  loss.wsl = {
+    homeManager = { ... }: {
+      home.sessionVariables.WIN_USER = winUser;
+    };
+  };
+}
+```
+
+### Sub-aspect with overlay
+
+```nix
+# modules/dev/rust.nix
+{ inputs, ... }: {
+  loss.dev._.rust = {
+    nixos.nixpkgs.overlays = [ inputs.rust-overlay.overlays.default ];
+    homeManager = { pkgs, ... }: {
+      home.packages = [ pkgs.rust-bin.stable.latest.default ];
+    };
+  };
+}
+```
+
+### Host composition
+
+```nix
+# modules/hosts/nixos-wsl/default.nix
+{ loss, ... }: {
+  den.hosts.x86_64-linux.nixos-wsl = {};
+
+  den.aspects.nixos-wsl = {
+    includes = with loss; [
+      wsl
+      shell
+      dev
+      dev._.rust
+      dev._.javascript
+    ];
+
+    nixos = { ... }: {
+      wsl.defaultUser = "loss";
+    };
+  };
+}
+```

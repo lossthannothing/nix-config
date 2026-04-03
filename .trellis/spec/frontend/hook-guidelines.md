@@ -1,153 +1,201 @@
-# Namespace & Auto-Merge Rules
+# Namespace & Aspect Composition
 
-> How namespaces work and how modules are automatically merged.
+> How namespaces work and how aspects are composed in the den framework.
 
 ---
 
 ## Overview
 
-This project uses `flake.modules.*` namespaces to organize configurations. Understanding namespace rules and auto-merge behavior is critical — it's the mechanism that allows multiple files to contribute to the same configuration without conflicts.
+This project uses the **vic/den** framework's aspect system. Understanding namespace registration and aspect composition is critical for organizing configurations correctly.
 
 ---
 
 ## Namespace Types
 
-### NixOS Namespaces (Fine-Grained)
+### Built-in den Namespaces
 
-Each NixOS feature gets its **own unique namespace**. Hosts must **explicitly import** each one.
+| Namespace | Purpose | Example |
+|-----------|---------|---------|
+| `den.default` | Global defaults for all hosts | Nix settings, locale |
+| `den.aspects.*` | Named aspects (user, host) | `den.aspects.loss`, `den.aspects.nixos-wsl` |
+| `den.hosts.*` | Host definitions | `den.hosts.x86_64-linux.nixos-wsl` |
 
-```nix
-# Each feature has its own namespace
-flake.modules.nixos.audio = { ... };     # Audio (PipeWire)
-flake.modules.nixos.bluetooth = { ... }; # Bluetooth
-flake.modules.nixos.nvidia = { ... };    # NVIDIA drivers
-flake.modules.nixos.fcitx5 = { ... };    # Input method
-flake.modules.nixos.wsl = { ... };       # WSL config
-```
+### Custom Namespaces
 
-**Why fine-grained?** NixOS system configs often conflict (e.g., different audio backends). Hosts must consciously choose which system features to enable.
-
-### Home Manager Namespaces (Domain-Aggregated)
-
-Multiple files contribute to the **same HM namespace**. All contributions are **automatically deep-merged**.
+Registered in `modules/den.nix`:
 
 ```nix
-# All these files write to homeManager.shell:
-# shell/zsh.nix
-flake.modules.homeManager.shell = { ... }: { ... };
-
-# shell/fzf.nix
-flake.modules.homeManager.shell = { ... }: { ... };
-
-# shell/bat.nix
-flake.modules.homeManager.shell = { ... }: { ... };
+{ inputs, den, ... }: {
+  _module.args.__findFile = den.lib.__findFile;
+  imports = [
+    inputs.den.flakeModule
+    (inputs.den.namespace "loss" true)
+  ];
+}
 ```
 
-**Why aggregated?** HM user configs rarely conflict. A shell namespace naturally contains many tools.
+This creates:
+- `loss.*` namespace for aspects
+- `<loss/...>` angle-bracket import capability
 
 ---
 
-## Current Namespace Registry
+## Namespace Registry
 
-### NixOS Namespaces (Explicit Import Required)
+### Current Namespaces
 
-| Namespace | Source | Description |
-|-----------|--------|-------------|
-| `nixos.base` | `base/*.nix` | Multi-file auto-merge |
-| `nixos.facter` | `base/facter.nix` | Hardware detection |
-| `nixos.disko` | `base/disko.nix` | Declarative disk partitioning |
-| `nixos.rust` | `dev/languages/rust.nix` | Rust overlay injection |
-| `nixos.wsl` | `wsl/default.nix` | WSL system config |
-| `nixos.loss` | `users/loss/default.nix` | User system config |
-| `nixos.nvidia` | `desktop/nvidia.nix` | NVIDIA drivers |
-| `nixos.niri` | `desktop/niri.nix` | Wayland compositor |
-| `nixos.audio` | `desktop/audio.nix` | PipeWire audio |
-| `nixos.bluetooth` | `desktop/bluetooth.nix` | Bluetooth support |
-| `nixos.power` | `desktop/power.nix` | Power management |
-| `nixos.fcitx5` | `desktop/fcitx5.nix` | Input method (NixOS+HM) |
-| `nixos.swaylock` | `desktop/swaylock.nix` | PAM authentication |
-| `nixos.fonts` | `desktop/fonts.nix` | System fonts |
-
-### Home Manager Namespaces (Auto-Merged)
-
-| Namespace | Contributing Files | Description |
-|-----------|-------------------|-------------|
-| `homeManager.base` | `base/home.nix`, `base/nix.nix` | HM foundation |
-| `homeManager.shell` | `shell/*.nix` (11 files) | Shell tools |
-| `homeManager.dev` | `dev/*.nix` (14 files) | Dev tools |
-| `homeManager.desktop` | `desktop/*.nix` (14+ files) | Desktop environment |
-| `homeManager.wsl` | `wsl/default.nix` | WSL user config |
-| `homeManager.loss` | `users/loss/default.nix` | User HM config |
+| Namespace | File | Description |
+|-----------|------|-------------|
+| `den.default` | `modules/default.nix` | Global defaults |
+| `den.aspects.loss` | `modules/loss.nix` | User "loss" definition |
+| `den.aspects.nixos-wsl` | `modules/hosts/nixos-wsl/default.nix` | Host aspect |
+| `loss.shell` | `modules/shell.nix` | Shell tools |
+| `loss.dev` | `modules/dev.nix` | Dev tools |
+| `loss.wsl` | `modules/wsl.nix` | WSL platform |
+| `loss.dev._.rust` | `modules/dev/rust.nix` | Rust sub-aspect |
+| `loss.dev._.javascript` | `modules/dev/javascript.nix` | JavaScript sub-aspect |
+| `loss.dev._.go` | `modules/dev/go.nix` | Go sub-aspect |
+| `loss.dev._.python` | `modules/dev/python.nix` | Python sub-aspect |
+| `loss.dev._.nix` | `modules/dev/nix.nix` | Nix sub-aspect |
 
 ---
 
-## Auto-Merge Behavior
+## Aspect Composition
 
-### How It Works
+### The `includes` Pattern
 
-When multiple files assign to the same namespace (e.g., `homeManager.shell`), the NixOS module system **deep-merges** them:
-
-```nix
-# From shell/zsh.nix:
-flake.modules.homeManager.shell = { ... }: {
-  programs.zsh.enable = true;
-};
-
-# From shell/fzf.nix:
-flake.modules.homeManager.shell = { ... }: {
-  programs.fzf.enable = true;
-};
-
-# Result (auto-merged):
-# {
-#   programs.zsh.enable = true;
-#   programs.fzf.enable = true;
-# }
-```
-
-### Cross-Directory Merge
-
-Files from **different directories** can contribute to the same namespace:
+Aspects compose via `includes`, not `imports`:
 
 ```nix
-# desktop/fonts.nix also contributes to homeManager.shell:
-flake.modules.homeManager.shell = { pkgs, ... }: {
-  home.packages = [pkgs.nerd-fonts.jetbrains-mono];
+den.aspects.loss = {
+  includes = [
+    <den/primary-user>
+    <loss/shell>
+    <loss/dev>
+  ];
+  # ...
 };
 ```
 
-This is valid and intentional — fonts are needed by shell tools like starship.
+### Angle-Bracket Imports
 
-### Merge Conflicts
-
-If two files set the **same attribute** in the same namespace, Nix will report an error. Use `lib.mkDefault`, `lib.mkForce`, or `lib.mkMerge` to resolve:
+The `__findFile` function enables `<namespace/path>` syntax:
 
 ```nix
-# Use lib.mkDefault for overridable defaults
-programs.bat.config.theme = lib.mkDefault "catppuccin-mocha";
+# These are equivalent:
+<loss/shell>           # Refers to loss.shell aspect
+<den/primary-user>     # Refers to den built-in
+```
+
+### Sub-Aspect References
+
+```nix
+includes = with loss; [
+  dev           # loss.dev
+  dev._.rust    # loss.dev._.rust (sub-aspect)
+];
 ```
 
 ---
 
-## Naming New Namespaces
+## Sub-Aspect Pattern (`._.`)
 
-### Rules
+### What It Means
 
-| Type | Rule | Example |
-|------|------|---------|
-| NixOS | Name after the specific feature | `nixos.audio`, `nixos.nvidia` |
-| HM | Name after the domain/category | `homeManager.shell`, `homeManager.dev` |
-| Host | Use `"hosts/<hostname>"` with quotes | `nixos."hosts/nixos-wsl"` |
+The `._` is an alias for `provides` in den/flake-aspects. It defines nested aspects:
 
-### When to Create a New Namespace vs. Reuse Existing
+```nix
+# modules/dev/rust.nix
+loss.dev._.rust = { ... };  # "loss.dev provides rust"
+```
 
-| Situation | Action |
-|-----------|--------|
-| New shell tool | Add to existing `homeManager.shell` |
-| New dev tool | Add to existing `homeManager.dev` |
-| New desktop app | Add to existing `homeManager.desktop` |
-| New NixOS system service | Create new `nixos.<service-name>` |
-| New NixOS hardware driver | Create new `nixos.<driver-name>` |
+### When to Use
+
+| Situation | Pattern |
+|-----------|---------|
+| Standalone aspect | `loss.shell` |
+| Child of another aspect | `loss.dev._.rust` |
+| Deeper nesting (rare) | `loss.dev._.rust._.extra` |
+
+### Composition Order
+
+```nix
+# Correct: parent before children
+includes = with loss; [
+  dev           # Parent first
+  dev._.rust    # Then children
+  dev._.javascript
+];
+
+# Also correct: children can be in any order
+includes = with loss; [
+  dev
+  dev._.javascript
+  dev._.rust
+];
+```
+
+---
+
+## Host Binding Rules
+
+### ❌ Wrong: Binding in User Module
+
+```nix
+# modules/loss.nix - DON'T DO THIS
+den.aspects.loss = { ... };
+
+# Wrong place!
+den.hosts.x86_64-linux.nixos-wsl.users.loss = {};
+```
+
+### ✅ Correct: Binding in Host Module
+
+```nix
+# modules/hosts/nixos-wsl/default.nix
+{ loss, ... }: {
+  # Host registration
+  den.hosts.x86_64-linux.nixos-wsl = {};
+
+  # Aspect composition
+  den.aspects.nixos-wsl = {
+    includes = with loss; [ wsl shell dev ];
+    # ...
+  };
+}
+```
+
+**Why**: User modules define capabilities. Host modules decide which users belong to which hosts.
+
+---
+
+## Cross-Aspect Dependencies
+
+### Using Flake Inputs
+
+```nix
+# modules/dev/rust.nix
+{ inputs, ... }: {
+  loss.dev._.rust = {
+    nixos.nixpkgs.overlays = [
+      inputs.rust-overlay.overlays.default
+    ];
+  };
+}
+```
+
+### Using `__findFile`
+
+```nix
+{ __findFile, ... }: {
+  den.aspects.loss = {
+    includes = [
+      <den/primary-user>
+      <loss/shell>
+    ];
+  };
+}
+```
 
 ---
 
@@ -155,6 +203,30 @@ programs.bat.config.theme = lib.mkDefault "catppuccin-mocha";
 
 | Mistake | Why It's Wrong | Correct Approach |
 |---------|---------------|-----------------|
-| Creating `homeManager.fzf` for one tool | HM namespaces aggregate by domain | Use `homeManager.shell` |
-| Creating `nixos.shell` for all shell system configs | NixOS namespaces are feature-specific | Only create if needed |
-| Forgetting to update this doc when adding namespaces | Future AI sessions won't know about new namespaces | Update the registry table above |
+| Using `imports` instead of `includes` | Aspects use `includes` for composition | Use `includes = [ ... ]` |
+| `loss.dev.rust` instead of `loss.dev._.rust` | Missing `provides` alias | Use `._.` pattern |
+| Host binding in user module | Violates separation of concerns | Put in `modules/hosts/*/` |
+| Relative imports like `../shell.nix` | Breaks with den's module system | Use `<loss/shell>` |
+| Forgetting `__findFile` parameter | Angle-bracket imports won't work | Add to function args |
+
+---
+
+## Adding a New Namespace
+
+1. Register in `modules/den.nix`:
+   ```nix
+   (inputs.den.namespace "myuser" true)
+   ```
+
+2. Create aspect files:
+   ```nix
+   # modules/myuser/shell.nix
+   myuser.shell.homeManager = { ... }: { ... };
+   ```
+
+3. Reference in host:
+   ```nix
+   includes = with myuser; [ shell ];
+   ```
+
+4. Update this document's registry table

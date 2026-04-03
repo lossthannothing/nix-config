@@ -1,157 +1,153 @@
 # Host & Infrastructure Directory Structure
 
-> How hosts and flake-parts infrastructure are organized.
+> How hosts and infrastructure are organized in the den framework.
 
 ---
 
 ## Overview
 
-The project has two infrastructure areas:
-- `hosts/` — Instance configurations that compose modules into deployable systems
-- `modules/flake-parts/` — Framework infrastructure that powers the module system
+The project uses vic/den framework with a simplified structure:
+- `modules/hosts/` — Host definitions that compose aspects into deployable systems
+- Infrastructure files at `modules/` root — Framework configuration
 
 ---
 
 ## Hosts Directory Layout
 
 ```
-hosts/
-|-- nixos-wsl/
-|   +-- default.nix          # NixOS-WSL host configuration
-|-- nixos-desktop/
-|   |-- default.nix          # NixOS physical desktop configuration
-|   +-- facter.json          # Hardware detection data (auto-generated)
-|-- nixos-vm/
-|   +-- default.nix          # NixOS VM configuration (testing)
-+-- fedora-wsl/
-    +-- default.nix          # Fedora WSL (standalone HM host)
+modules/hosts/
+└── <hostname>/
+    └── default.nix      # Host registration + aspect composition
 ```
 
-### Host Types
+### Current Hosts
 
-| Type | Registration | Example |
-|------|-------------|---------|
-| NixOS host | `flake.modules.nixos."hosts/<name>"` | nixos-wsl, nixos-desktop, nixos-vm |
-| Standalone HM host | `flake.modules.homeManager."hosts/<name>"` | fedora-wsl |
+| Host | Location | Description |
+|------|----------|-------------|
+| nixos-wsl | `modules/hosts/nixos-wsl/default.nix` | NixOS on WSL2 |
 
 ---
 
-## flake-parts Infrastructure Layout
+## Infrastructure Files
 
 ```
-modules/flake-parts/
-|-- flake-parts.nix      # Enables flake.modules.* namespace options
-|-- flake.nix            # flake.meta option (user metadata definition)
-|-- host-machines.nix    # Core engine: hosts/ -> nixosConfigurations
-|-- nixpkgs.nix          # perSystem pkgs instance + flake overlays
-+-- fmt.nix              # treefmt-nix formatting (15+ tools)
+modules/
+├── den.nix          # Framework init + namespace registration
+├── default.nix      # den.default — global defaults
+├── nixpkgs.nix      # perSystem pkgs + flake overlays
+├── formatter.nix    # treefmt-nix configuration
+├── loss.nix         # den.aspects.loss — user definition
+├── shell.nix        # loss.shell — shell tools
+├── dev.nix          # loss.dev — dev tools
+├── wsl.nix          # loss.wsl — WSL platform
+└── dev/             # Language-specific sub-aspects
 ```
-
-**CRITICAL**: These files are the foundation of the entire project. Modifying them requires explicit review approval.
 
 ### What Each File Does
 
 | File | Role | Impact of Breaking It |
 |------|------|----------------------|
-| `flake-parts.nix` | Defines `flake.modules.nixos.*` and `flake.modules.homeManager.*` options | All modules stop working |
-| `flake.nix` | Defines `flake.meta` option for project metadata | Metadata references break |
-| `host-machines.nix` | Transforms `flake.modules.*.hosts/*` into `nixosConfigurations` | No hosts can be built |
-| `nixpkgs.nix` | Creates `perSystem` pkgs instance, applies overlays | Package resolution breaks |
-| `fmt.nix` | Configures all formatting tools | `nix fmt` stops working |
+| `den.nix` | Loads den flakeModule, registers namespaces | All aspect system stops working |
+| `default.nix` | Global defaults (nix, locale, HM) | All hosts lose base configuration |
+| `nixpkgs.nix` | perSystem pkgs, overlays | Package resolution breaks |
+| `formatter.nix` | treefmt configuration | `nix fmt` stops working |
+
+**CRITICAL**: Modifying `den.nix`, `nixpkgs.nix`, or `formatter.nix` requires review.
 
 ---
 
-## NixOS Host Configuration Pattern
+## Host Definition Pattern
 
-All NixOS hosts follow this assembly pattern:
-
-```nix
-# hosts/nixos-wsl/default.nix
-{ config, inputs, ... }: {
-  flake.modules.nixos."hosts/nixos-wsl" = { ... }: {
-    imports =
-      with config.flake.modules.nixos; [
-        # 1. External dependency modules
-        inputs.nixos-wsl.nixosModules.default
-
-        # 2. Local NixOS modules (by namespace name)
-        base
-        wsl
-        loss
-      ]
-      ++ [
-        # 3. Home Manager integration block
-        {
-          home-manager.users.loss = {
-            imports = with config.flake.modules.homeManager; [
-              base
-              shell
-              dev
-              loss
-              wsl
-            ];
-          };
-        }
-      ];
-
-    # 4. Host-specific inline config
-    networking.hostName = "nixos-wsl";
-  };
-}
-```
-
-### Assembly Structure (4 Sections)
-
-1. **External modules**: Import from flake inputs (`inputs.*.nixosModules.*`)
-2. **Local NixOS modules**: Reference by namespace name via `with config.flake.modules.nixos`
-3. **HM integration**: Nested `home-manager.users.<user>.imports` with HM module namespaces
-4. **Host-specific overrides**: Inline config unique to this host (hostname, boot, disko, etc.)
-
----
-
-## Standalone HM Host Pattern
-
-For non-NixOS systems (e.g., Fedora WSL):
+All hosts follow this pattern:
 
 ```nix
-# hosts/fedora-wsl/default.nix
-{ config, ... }: {
-  flake.modules.homeManager."hosts/fedora-wsl" = { ... }: {
-    imports = with config.flake.modules.homeManager; [
-      base  shell  dev  loss  wsl
+# modules/hosts/<hostname>/default.nix
+{ loss, ... }: {
+  # 1. Register the host
+  den.hosts.x86_64-linux.<hostname> = {};
+
+  # 2. Define host aspect
+  den.aspects.<hostname> = {
+    # 3. Compose aspects
+    includes = with loss; [
+      shell
+      dev
+      dev._.rust
+      dev._.javascript
+      # ... more aspects
     ];
-    home = {
-      username = "loss";
-      homeDirectory = "/home/loss";
+
+    # 4. Host-specific overrides
+    nixos = { ... }: {
+      # System-level config
+      wsl.defaultUser = "loss";
+    };
+
+    homeManager = { ... }: {
+      # User-level config (optional)
     };
   };
 }
 ```
 
-**Key differences from NixOS hosts:**
-- Registers to `flake.modules.homeManager."hosts/..."` (not nixos)
-- Must manually specify `home.username` and `home.homeDirectory`
-- No NixOS modules available (no system-level config)
-- `genericLinux` is auto-injected by `host-machines.nix` for compatibility
+### Structure Breakdown
+
+1. **Host registration**: `den.hosts.<arch>.<hostname> = {}`
+2. **Aspect definition**: `den.aspects.<hostname> = { ... }`
+3. **Composition**: `includes = with loss; [ ... ]`
+4. **Overrides**: `nixos` and/or `homeManager` sections
 
 ---
 
 ## Adding a New Host
 
-### NixOS Host
+1. Create `modules/hosts/<hostname>/default.nix`
+2. Register host: `den.hosts.x86_64-linux.<hostname> = {}`
+3. Define aspect: `den.aspects.<hostname> = { ... }`
+4. Compose aspects via `includes`
+5. Add host-specific overrides
+6. Run `nix flake check` to validate
 
-1. Create `hosts/<hostname>/default.nix`
-2. Follow the 4-section assembly pattern above
-3. Choose which NixOS and HM modules to import
-4. Add host-specific config (hostname, boot, etc.)
-5. For physical hardware: generate `facter.json` and import `facter` module
+### Example: Adding a Desktop Host
 
-### Standalone HM Host
+```nix
+# modules/hosts/nixos-desktop/default.nix
+{ loss, ... }: {
+  den.hosts.x86_64-linux.nixos-desktop = {};
 
-1. Create `hosts/<hostname>/default.nix`
-2. Follow the standalone HM pattern above
-3. Specify `home.username` and `home.homeDirectory`
-4. Choose which HM modules to import
+  den.aspects.nixos-desktop = {
+    includes = with loss; [
+      shell
+      dev
+      dev._.rust
+      # Add desktop aspects when available
+    ];
+
+    nixos = { ... }: {
+      networking.hostName = "nixos-desktop";
+      # Desktop-specific config
+    };
+  };
+}
+```
+
+---
+
+## Namespace Registration
+
+New user namespaces are registered in `modules/den.nix`:
+
+```nix
+{ inputs, den, ... }: {
+  _module.args.__findFile = den.lib.__findFile;
+  imports = [
+    inputs.den.flakeModule
+    (inputs.den.namespace "loss" true)  # Register "loss" namespace
+    # Add more namespaces as needed:
+    # (inputs.den.namespace "another-user" true)
+  ];
+}
+```
 
 ---
 
@@ -159,7 +155,24 @@ For non-NixOS systems (e.g., Fedora WSL):
 
 | Mistake | Correct Approach |
 |---------|-----------------|
-| Putting reusable config in hosts/ | Hosts should only assemble modules. Move reusable config to modules/ |
-| Forgetting to quote host namespace | Must be `"hosts/my-host"` with quotes (contains `/`) |
-| Importing modules by file path | Use namespace names: `with config.flake.modules.nixos; [base wsl]` |
-| Modifying flake-parts/ without review | Always get review approval first |
+| Using `imports` instead of `includes` | Aspects use `includes` for composition |
+| Host binding in user module | Put `den.hosts.*` in host config only |
+| `loss.dev.rust` instead of `loss.dev._.rust` | Sub-aspects use `._.` pattern |
+| Modifying den.nix without review | Always get review approval first |
+| Putting reusable config in hosts/ | Move to aspect files in `modules/` |
+
+---
+
+## Migration Notes
+
+If migrating from the old flake-parts structure:
+
+| Old Location | New Location |
+|--------------|--------------|
+| `hosts/<hostname>/` | `modules/hosts/<hostname>/` |
+| `modules/flake-parts/host-machines.nix` | Handled by den framework |
+| `modules/base/*.nix` | `modules/default.nix` (merged) |
+| `modules/shell/*.nix` | `modules/shell.nix` (merged) |
+| `modules/dev/*.nix` | `modules/dev.nix` + `modules/dev/*.nix` |
+| `flake.modules.nixos.*` | `den.aspects.*` or `loss.*` |
+| `flake.modules.homeManager.*` | `*.homeManager` in aspects |

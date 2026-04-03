@@ -8,7 +8,7 @@
     includes = [
       <den/primary-user>
       <loss/shell>
-      <loss/dev>
+      <loss/editors>
     ];
 
     nixos = {

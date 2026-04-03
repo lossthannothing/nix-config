@@ -1,19 +1,8 @@
-# modules/dev.nix
+# modules/shell/git.nix
 #
-# loss.dev - Development tools
-# Merged from: dev/git.nix, dev/editors.nix, dev/direnv.nix, dev/just.nix,
-#   dev/hyperfine.nix, dev/ripgrep.nix, dev/ansible.nix, dev/devenv.nix
+# loss.shell._.git — git, gh, lazygit, global gitignore
 {
-  loss.dev.homeManager = {pkgs, ...}: {
-    home.packages = with pkgs; [
-      neovim
-      ansible
-      devenv
-      hyperfine
-      just
-    ];
-
-    # Git
+  loss.shell._.git.homeManager = {pkgs, ...}: {
     programs.git = {
       enable = true;
       lfs.enable = true;
@@ -94,21 +83,5 @@
       .env
       *.local.*
     '';
-
-    # Direnv
-    programs.direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-    };
-
-    # Ripgrep
-    programs.ripgrep = {
-      enable = true;
-      arguments = [
-        "--hidden"
-        "--glob=!.git/*"
-        "--smart-case"
-      ];
-    };
   };
 }
