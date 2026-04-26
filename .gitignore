@@ -9,7 +9,9 @@
 **/.secrets/
 .serena/memories/serena_tool_compatibility_nix.md
 .serena/
-.claude/
+.claude/settings.local.json
+.claude/memory/
+.claude/plans/
 .cunzhi-memory/
 .spec-workflow/
 .trellis/
