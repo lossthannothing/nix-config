@@ -12,6 +12,7 @@
 .claude/
 .cunzhi-memory/
 .spec-workflow/
+.trellis/
 
 # Reference repositories (auto-managed)
 .ref/

@@ -48,8 +48,6 @@
         on-unmatched = "warn";
         excludes = [
           "*.md"
-          ".trellis/**"
-          "*.task.json"
           "LICENSE"
         ];
       };

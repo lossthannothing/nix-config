@@ -2,167 +2,70 @@
 
 [![English](https://img.shields.io/badge/lang-English-blue.svg)](README.md) [![简体中文](https://img.shields.io/badge/lang-简体中文-red.svg)](README_CN.md)
 
-Personal NixOS and Home Manager configuration, inspired by [drupol/infra](https://github.com/drupol/infra) modular architecture pattern.
+Personal NixOS configuration built with [vic/den](https://github.com/vic/den) — a context-aware, aspect-driven framework for declarative Nix systems.
 
-## Architecture Overview
-
-This configuration uses a **decentralized module system** powered by `flake-parts` and `import-tree`:
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│  flake.nix (Mechanism Layer)                            │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │  inputs: All external dependencies (centralized)│  │
-│  │  import-tree auto-scans                         │  │
-│  │  - ./modules/*  → flake.modules                │  │
-│  │  - ./hosts/*    → nixosConfigurations          │  │
-│  └─────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────┐
-│  modules/ (Capability Layer)                            │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │  flake.modules.nixos.*        (system configs) │  │
-│  │  flake.modules.homeManager.*  (user configs)   │  │
-│  └─────────────────────────────────────────────────┘  │
-│           ↓                    ↓                     │
-│  dev/, shell/, base/, desktop/, wsl/, users/        │
-│  (auto-merged to aggregate modules)                  │
-└─────────────────────────────────────────────────────────┘
-                         ↓
-┌─────────────────────────────────────────────────────────┐
-│  hosts/ (Instance Layer)                                │
-│  ┌─────────────────────────────────────────────────┐  │
-│  │  nixos-wsl/      → NixOS-WSL                │  │
-│  │  nixos-desktop/  → NixOS Desktop (Niri+NVIDIA)│  │
-│  │  nixos-vm/       → NixOS VM (light desktop)  │  │
-│  │  fedora-wsl/     → Fedora-WSL (HM only)      │  │
-│  └─────────────────────────────────────────────────┘  │
-│  Compose capabilities from modules via imports          │
-└─────────────────────────────────────────────────────────┘
+flake.nix (entry)
+  └── flake-parts + import-tree
+       └── modules/* (auto-scanned)
+            ├── den.nix          → framework init + "loss" namespace
+            ├── default.nix      → den.default (applied to all hosts/users)
+            ├── loss.nix         → den.aspects.loss (user "loss")
+            ├── nixpkgs.nix      → perSystem pkgs + overlays
+            ├── formatter.nix    → treefmt-nix
+            ├── system/          → loss.system (nix, locale, wsl)
+            ├── shell/           → loss.shell (zsh, starship, bat, ...)
+            ├── editors/         → loss.editors (neovim)
+            ├── dev/             → loss.dev.* (go, rust, python, js, nix, tools)
+            ├── profiles/        → loss.profiles.* (wsl preferences)
+            └── hosts/           → den.hosts + host-specific aspects
+                 └── nixos-wsl/  → WSL2 NixOS instance
 ```
 
-### Key Principles
+### How It Works
 
-1. **Decentralized**: `flake.nix` provides mechanisms, not hardcoded host lists
-2. **Distributed Registration**: Each host self-registers via `flake.modules`
-3. **Co-location**: System and user configurations unified per feature
-4. **Auto-merge**: `dev/` and `shell/` modules automatically aggregate
+Den replaces flat module lists with **aspects** — composable bundles that are context-aware. An aspect like `loss.shell._.zsh` knows whether it's configuring a NixOS host, a Home Manager user, or both.
 
-### Module Auto-Merge Rules
+| Concept | Example | Purpose |
+|---------|---------|---------|
+| `den.default` | `modules/default.nix` | Baseline config for all hosts/users |
+| `den.aspects.<name>` | `den.aspects.loss`, `den.aspects.nixos-wsl` | Named config bundles |
+| `den.hosts.<arch>.<host>` | `den.hosts.x86_64-linux.nixos-wsl` | Host declarations |
+| `loss.*` | `loss.shell`, `loss.dev._.rust` | Custom namespace for project aspects |
+| `<loss/shell>` | Angle-bracket import | Reusable aspect reference |
 
-| Directory | Module Path | Description |
-|-----------|-------------|-------------|
-| `modules/dev/*.nix` | `homeManager.dev` | Dev tools (auto-merged, 14 files) |
-| `modules/shell/*.nix` | `homeManager.shell` | Shell tools (auto-merged, 11 files) |
-| `modules/desktop/*.nix` | `homeManager.desktop` | Desktop HM configs (auto-merged, 14+ files) |
+### Aggregation Pattern
 
-**Important**: When adding tools to `dev/` or `shell/`, just create the file — no need to modify host configs!
+Sub-aspects are aggregated into composite aspects via `includes`:
 
-## Technology Stack
-
-| Technology | Role | Status |
-|------------|------|--------|
-| Nix Flakes | Reproducible, declarative builds | ✅ Core |
-| flake-parts | Modular framework with open module options | ✅ Core |
-| import-tree | Auto-scan `modules/` and `hosts/` | ✅ Core |
-| Home Manager | User-level package and config management | ✅ Core |
-| nixos-facter | Hardware detection, replaces hardware-configuration.nix | ✅ desktop |
-| disko | Declarative disk partitioning, auto-generates fileSystems | ✅ Core |
-| treefmt-nix | Multi-language formatting (alejandra/deadnix/statix/etc.) | ✅ |
-| Catppuccin | Mocha theme system via catppuccin/nix | ✅ desktop |
-| Niri | Scrollable-tiling Wayland compositor | ✅ desktop |
-| NixOS-WSL | NixOS on WSL2 | ✅ wsl |
-| rust-overlay | Rust toolchain management | ✅ |
-| nixos-anywhere | Remote NixOS installation via SSH | ✅ deployment |
-
-## Directory Structure
-
+```nix
+# modules/shell/default.nix
+loss.shell = {
+  includes = with loss; [
+    shell._.zsh
+    shell._.starship
+    shell._.git
+    # ... more sub-aspects
+  ];
+};
 ```
-nix-config/
-├── flake.nix              # Flake entry point
-├── flake.lock             # Dependency lock file
-├── CLAUDE.md              # Claude AI assistant context
-├── README.md              # This file
-├── scripts/               # Utility scripts
-│   ├── deploy.sh              # 交互式部署菜单 + dskisko + nixos-anywhere
-│   ├── nixdaemon-proxy.sh     # Nix daemon 代理配置 (物理机/VM)
-│   ├── nix-daemon-wsl-proxy.sh # Nix daemon 代理配置 (WSL)
-│   ├── git-proxy.sh            # Git 命令代理包装器
-│   └── shell-proxy.sh          # Shell 会话代理设置
-├── modules/               # Feature modules (auto-scanned)
-│   ├── base/              # Base system + user config
-│   │   ├── console/       # Console settings
-│   │   ├── system/        # System packages
-│   │   ├── time/          # Timezone & locale
-│   │   ├── disko.nix      # Declarative disk partitioning
-│   │   ├── facter.nix     # nixos-facter integration
-│   │   ├── home.nix       # Home Manager base config
-│   │   ├── i18n.nix       # Internationalization
-│   │   └── nix.nix        # Nix daemon settings
-│   ├── dev/               # Development tools (auto-merged)
-│   │   ├── languages/     # Language toolchains
-│   │   │   ├── go.nix
-│   │   │   ├── javascript.nix
-│   │   │   ├── nix.nix
-│   │   │   ├── python.nix
-│   │   │   └── rust.nix   # Rust overlay injection
-│   │   ├── tools/
-│   │   │   └── devenv.nix
-│   │   ├── ansible.nix    # Configuration management
-│   │   ├── claude.nix     # Claude Code
-│   │   ├── direnv.nix     # Per-directory environments
-│   │   ├── editors.nix    # Code editors
-│   │   ├── git.nix        # Git configuration
-│   │   ├── hyperfine.nix  # Benchmarking
-│   │   ├── just.nix       # Task runner
-│   │   └── ripgrep.nix    # Fast grep (rg)
-│   ├── shell/             # Shell tools (auto-merged)
-│   │   ├── archive.nix    # Archive handling (extract)
-│   │   ├── bat.nix        # cat with syntax highlighting
-│   │   ├── eza.nix        # ls with git integration
-│   │   ├── fd.nix         # find replacement
-│   │   ├── fzf.nix        # Fuzzy finder
-│   │   ├── nix-your-shell.nix  # Nix shell integration
-│   │   ├── starship.nix   # Cross-shell prompt
-│   │   ├── zoxide.nix     # cd replacement (z/cdi)
-│   │   └── zsh.nix        # Zsh configuration
-│   ├── desktop/           # Desktop environment
-│   │   ├── alacritty.nix  # Terminal emulator
-│   │   ├── audio.nix      # PipeWire audio
-│   │   ├── bluetooth.nix  # Bluetooth support
-│   │   ├── browser.nix    # Browser configuration
-│   │   ├── fcitx5.nix     # Input method (NixOS + HM)
-│   │   ├── fonts.nix      # Font configuration
-│   │   ├── fuzzel.nix     # Application launcher
-│   │   ├── media.nix      # Media applications
-│   │   ├── niri.nix       # Wayland compositor
-│   │   ├── nvidia.nix     # NVIDIA drivers
-│   │   ├── power.nix      # Power management
-│   │   ├── screenshot.nix # Screen capture
-│   │   ├── swayidle.nix   # Idle management
-│   │   ├── swaylock.nix   # Screen locking (PAM)
-│   │   ├── swww.nix       # Wallpaper daemon
-│   │   ├── theming.nix    # Catppuccin theming
-│   │   ├── waybar.nix     # Status bar
-│   │   ├── wired-notify.nix  # Notification daemon
-│   │   └── wlogout.nix    # Logout menu
-│   ├── wsl/               # WSL unified config
-│   │   └── default.nix    # nixos.wsl + homeManager.wsl
-│   ├── users/             # User-specific configs
-│   │   └── loss/
-│   │       └── default.nix    # nixos.loss + homeManager.loss
-│   └── flake-parts/       # Flake-parts generators
-│       ├── flake-parts.nix
-│       ├── flake.nix
-│       ├── fmt.nix        # Code formatting
-│       ├── host-machines.nix  # Auto-generates configurations
-│       └── nixpkgs.nix        # Nixpkgs config + overlays
-└── hosts/                 # Host definitions (auto-scanned)
-    ├── nixos-wsl/         # NixOS-WSL
-    ├── nixos-desktop/     # NixOS Desktop (Niri + NVIDIA + Catppuccin)
-    ├── nixos-vm/          # NixOS VM (light desktop)
-    └── fedora-wsl/        # Fedora-WSL (Home Manager only)
+
+Hosts compose these aggregates:
+
+```nix
+# modules/hosts/nixos-wsl/default.nix
+den.aspects.nixos-wsl = {
+  includes = with loss; [
+    system._.wsl
+    profiles.wsl
+    shell            # aggregated
+    dev._.tools
+    dev._.rust
+    # ...
+  ];
+};
 ```
 
 ## Quick Start
@@ -171,292 +74,156 @@ nix-config/
 
 - Nix 2.19+ with flakes enabled
 - Git
-- NixOS or NixOS-WSL
 
-### Installation
+### Deploy
 
-1. Clone this repository:
 ```bash
-git clone https://github.com/lossthannothing/nix-config.git
-cd nix-config
-```
+# Build without activating
+nixos-rebuild build --flake .#nixos-wsl
 
-2. Deploy to your system:
-```bash
-# 交互式部署 (推荐)
-./scripts/deploy.sh
-
-# 直接部署 NixOS 系统
+# Deploy
 sudo nixos-rebuild switch --flake .#nixos-wsl
-sudo nixos-rebuild switch --flake .#nixos-desktop
 
-# 部署 Home Manager (独立模式)
-home-manager switch --flake .#hosts/fedora-wsl
-
-# Live USB 安装 (disko 声明式分区)
-./scripts/deploy.sh --local nixos-desktop
-
-# 远程安装 (nixos-anywhere)
-./scripts/deploy.sh nixos-vm 192.168.122.100
+# Interactive deploy menu
+./scripts/deploy.sh
 ```
 
 ### Common Commands
 
 ```bash
-# Check flake configuration
-nix flake check
-
-# Format code (alejandra, deadnix, statix, etc.)
-nix fmt
-
-# Update dependencies
-nix flake update
-
-# Show available systems
-nix flake show
-
-# Build without activating
-nixos-rebuild build --flake .#nixos-wsl
-
-# Test configuration
-nixos-rebuild dry-run --flake .#nixos-wsl
-
-# Debug with nix repl
-nix repl
-:lf .
-:p outputs.nixosConfigurations.nixos-wsl.config.services
+nix fmt                                        # Format (alejandra + deadnix + statix)
+nix flake check                                # Validate
+nix flake update                               # Update inputs
+nixos-rebuild dry-run --flake .#nixos-wsl      # Test without applying
 ```
 
-## Modern Toolchain
+## Directory Structure
 
-| Traditional | Modern | Config Location |
-|-------------|--------|-----------------|
-| `find` | `fd` | `modules/shell/fd.nix` |
-| `grep` | `rg` (ripgrep) | `modules/dev/ripgrep.nix` |
-| `ls` | `eza` | `modules/shell/eza.nix` |
-| `cat` | `bat` | `modules/shell/bat.nix` |
-| `cd` | `z` (zoxide) | `modules/shell/zoxide.nix` |
-| `tree` | `eza --tree` | `modules/shell/eza.nix` |
-
-### Usage Examples
-```bash
-fd --extension nix        # Find .nix files
-rg "flake.modules"        # Search text
-eza --tree --level=3      # Directory tree
+```
+nix-config/
+├── flake.nix              # Flake entry — inputs + import-tree
+├── flake.lock
+├── CLAUDE.md              # AI assistant context
+├── modules/               # All config (auto-scanned by import-tree)
+│   ├── den.nix            #   Den init + "loss" namespace registration
+│   ├── default.nix        #   den.default — global baseline
+│   ├── loss.nix           #   den.aspects.loss — user "loss"
+│   ├── nixpkgs.nix        #   perSystem pkgs, overlays, pkgs-by-name
+│   ├── formatter.nix      #   treefmt-nix multi-language formatter
+│   ├── system/            #   loss.system — nix daemon, locale, wsl
+│   ├── shell/             #   loss.shell — zsh, starship, git, bat, eza, ...
+│   ├── editors/           #   loss.editors — neovim
+│   ├── dev/               #   loss.dev.* — go, rust, python, js, nix, tools
+│   ├── profiles/          #   loss.profiles.* — platform-specific prefs
+│   └── hosts/             #   Host definitions + per-host aspects
+│       └── nixos-wsl/     #     WSL2 NixOS
+├── pkgs/by-name/          #   Custom packages (pkgs-by-name-for-flake-parts)
+├── scripts/               #   Utility scripts
+│   ├── deploy.sh              # Interactive deploy + disko + nixos-anywhere
+│   ├── git-proxy.sh           # Git proxy wrapper
+│   ├── nixdaemon-proxy.sh     # Nix daemon proxy (bare-metal/VM)
+│   ├── nix-daemon-wsl-proxy.sh # Nix daemon proxy (WSL)
+│   └── shell-proxy.sh         # Shell session proxy
+└── .ref/                  #   Reference repos (gitignored)
 ```
 
 ## Configuration Guide
 
-### Module Namespace Registry
+### Adding a Shell Tool
 
-**NixOS namespaces** (require explicit import in hosts):
-| Namespace | Source | Description |
-|-----------|--------|-------------|
-| `nixos.base` | `base/*.nix` | Multi-file auto-merge |
-| `nixos.facter` | `base/facter.nix` | Hardware detection |
-| `nixos.disko` | `base/disko.nix` | Declarative partitioning |
-| `nixos.rust` | `dev/languages/rust.nix` | Rust overlay |
-| `nixos.wsl` | `wsl/default.nix` | WSL system config |
-| `nixos.loss` | `users/loss/default.nix` | User system config |
-| `nixos.nvidia` | `desktop/nvidia.nix` | NVIDIA driver |
-| `nixos.niri` | `desktop/niri.nix` | Wayland compositor |
-| `nixos.audio` | `desktop/audio.nix` | PipeWire audio |
-| `nixos.bluetooth` | `desktop/bluetooth.nix` | Bluetooth |
-| `nixos.power` | `desktop/power.nix` | Power management |
-| `nixos.fcitx5` | `desktop/fcitx5.nix` | Input method |
-| `nixos.swaylock` | `desktop/swaylock.nix` | PAM authentication |
-| `nixos.fonts` | `desktop/fonts.nix` | System fonts |
-
-**Home Manager namespaces**:
-| Namespace | Source | Description |
-|-----------|--------|-------------|
-| `homeManager.base` | `base/home.nix`, `base/nix.nix` | Multi-file auto-merge |
-| `homeManager.shell` | `shell/*.nix` (11 files) | Auto-merged |
-| `homeManager.dev` | `dev/*.nix` (14 files) | Auto-merged |
-| `homeManager.desktop` | `desktop/*.nix` (14+ files) | Auto-merged |
-| `homeManager.wsl` | `wsl/default.nix` | WSL user config |
-| `homeManager.loss` | `users/loss/default.nix` | User HM config |
-
-### Adding Development Tools
+Create `modules/shell/<tool>.nix`:
 
 ```nix
-# Create modules/dev/<tool>.nix (single step!)
-
-# Case 1: Has programs.<tool>.enable
-{
-  flake.modules.homeManager.dev = {
-    programs.<tool> = {enable = true;};
-  };
-}
-
-# Case 2: No Home Manager support
-{
-  flake.modules.homeManager.dev = {pkgs, ...}: {
-    home.packages = with pkgs; [<tool>];
-  };
-}
+{ loss.shell._.<tool>.homeManager = { pkgs, ... }: {
+  programs.<tool>.enable = true;
+}; }
 ```
 
-### Adding Shell Tools
+Then add it to the aggregation in `modules/shell/default.nix`.
+
+### Adding a Dev Toolchain
+
+Create `modules/dev/<lang>.nix`:
 
 ```nix
-# Create modules/shell/<tool>.nix
-
-# Case 1: Has programs.<tool>.enable
-{
-  flake.modules.homeManager.shell = {
-    programs.<tool> = {enable = true;};
-  };
-}
-
-# Case 2: No Home Manager support
-{
-  flake.modules.homeManager.shell = {pkgs, ...}: {
-    home.packages = with pkgs; [<tool>];
-  };
-}
+{ loss.dev._.<lang>.homeManager = { pkgs, ... }: {
+  home.packages = [ pkgs.<lang> ];
+}; }
 ```
 
-### Adding Desktop Components
-
-```nix
-# Create modules/desktop/<component>.nix
-
-# Case 1: HM config only (auto-merged to homeManager.desktop)
-{
-  flake.modules.homeManager.desktop = {pkgs, ...}: {
-    programs.<component>.enable = true;
-  };
-}
-
-# Case 2: Need NixOS + HM dual registration
-{
-  flake.modules = {
-    nixos.<component> = { /* system-level */ };
-    homeManager.desktop = { /* user-level, auto-merged */ };
-  };
-}
-# Note: NixOS side requires manual import in hosts/nixos-desktop/default.nix
-```
+Then include it in the host's `den.aspects.<host>.includes`.
 
 ### Adding a New Host
 
+1. Create `modules/hosts/<hostname>/default.nix`
+2. Declare the host and define its aspect:
+
 ```nix
-# 1. Create hosts/<hostname>/default.nix
-# 2. Choose registration mode:
-#    - Full NixOS: flake.modules.nixos."hosts/<hostname>" = {...}: { ... };
-#    - HM only:    flake.modules.homeManager."hosts/<hostname>" = {...}: { ... };
-# 3. Import required modules (reference existing hosts)
-# 4. For hardware detection: sudo nix run nixpkgs#nixos-facter -- -o hosts/<hostname>/facter.json
-# 5. host-machines.nix auto-detects "hosts/" prefix and registers configurations
+{ loss, ... }: {
+  den.hosts.x86_64-linux.<hostname> = {};
+  den.aspects.<hostname> = {
+    includes = with loss; [
+      system._.nix
+      shell
+      dev._.tools
+    ];
+    nixos = { ... }: {
+      # host-specific NixOS config
+    };
+  };
+}
 ```
 
-### Hardware Detection (nixos-facter)
+3. Deploy: `sudo nixos-rebuild switch --flake .#<hostname>`
 
-Replaces traditional `hardware-configuration.nix`:
-- `modules/base/facter.nix`: Registers `nixos.facter` module, installs facter CLI
-- `hosts/nixos-desktop/facter.json`: Hardware detection report
-- Usage in host: `{hardware.facter.reportPath = ./facter.json;}`
-- Generate command: `sudo nix run nixpkgs#nixos-facter -- -o hosts/<hostname>/facter.json`
-- **Only for desktop/VM hosts**, WSL doesn't need it (hardware managed by Windows)
+### Context-Aware Aspects
 
-## Deployment Commands
+Aspects can inspect their context (`host`, `user`, `home`) to produce different config:
 
-```bash
-# 交互式部署菜单 (推荐，自动检测环境)
-./scripts/deploy.sh
-
-# NixOS 系统重建
-sudo nixos-rebuild switch --flake .#nixos-wsl
-sudo nixos-rebuild switch --flake .#nixos-desktop
-sudo nixos-rebuild switch --flake .#nixos-vm
-
-# Home Manager 独立部署
-home-manager switch --flake .#hosts/fedora-wsl
-
-# Live USB 安装 (disko 声明式分区)
-./scripts/deploy.sh --local nixos-desktop
-
-# 远程部署 (nixos-anywhere)
-./scripts/deploy.sh nixos-vm 192.168.122.100
+```nix
+{ den, ... }: {
+  den.aspects.video = den.lib.take.exactly ({ host, user }: {
+    nixos.users.users.${user.userName}.extraGroups = [ "video" ];
+  });
+}
 ```
 
-### Proxy Scripts (网络代理配置)
+Functions requiring unavailable context parameters are silently excluded — no conditional boilerplate needed.
 
-```bash
-# Git 命令代理包装器
-./scripts/git-proxy.sh git push
+## Technology Stack
 
-# Shell 会话代理
-source ./scripts/shell-proxy.sh
-
-# Nix daemon 代理 (物理机/VM)
-sudo ./scripts/nixdaemon-proxy.sh http    # HTTP 代理
-sudo ./scripts/nixdaemon-proxy.sh socks   # SOCKS5 代理
-sudo ./scripts/nixdaemon-proxy.sh off     # 清除代理
-
-# Nix daemon 代理 (WSL)
-sudo ./scripts/nix-daemon-wsl-proxy.sh http
-```
+| Technology | Role |
+|------------|------|
+| [den](https://github.com/vic/den) | Context-aware aspect framework |
+| [flake-parts](https://flake.parts/) | Modular flake composition |
+| [import-tree](https://github.com/vic/import-tree) | Auto-scan `modules/` |
+| [flake-aspects](https://github.com/vic/flake-aspects) | Aspect infrastructure |
+| [Home Manager](https://github.com/nix-community/home-manager) | User-level config |
+| [NixOS-WSL](https://github.com/nix-community/NixOS-WSL) | NixOS on WSL2 |
+| [treefmt-nix](https://github.com/numtide/treefmt-nix) | Multi-language formatting |
+| [rust-overlay](https://github.com/oxalica/rust-overlay) | Rust toolchain |
+| [pkgs-by-name](https://github.com/nix-community/pkgs-by-name-for-flake-parts) | Custom package auto-discovery |
 
 ## Platform Support
 
-Current configurations:
+| Host | Type | Description |
+|------|------|-------------|
+| nixos-wsl | NixOS | WSL2 development environment |
 
-| Host | Type | Platform | Description |
-|------|------|----------|-------------|
-| nixos-wsl | NixOS | x86_64-linux | Primary development environment |
-| nixos-desktop | NixOS | x86_64-linux | Full desktop (Niri + NVIDIA + Catppuccin) |
-| nixos-vm | NixOS | x86_64-linux | Lightweight VM for testing |
-| fedora-wsl | HM only | x86_64-linux | Fedora WSL with Home Manager |
+## Proxy Scripts (WSL)
 
-## Project Philosophy
-
-This configuration follows these principles:
-
-1. **Modularity**: Each module is self-contained and reusable
-2. **Composability**: Combine modules freely without coupling
-3. **Simplicity**: Clear structure, minimal abstraction
-4. **DRY**: Auto-merge and module registry eliminate duplication
-5. **Maintainability**: Easy to understand and modify
-6. **Best Practices**: Follow NixOS and Nix community standards
-
-## Documentation
-
-- **[README_CN.md](./README_CN.md)** - 中文版本文档 (Chinese README)
-- **[CLAUDE.md](./CLAUDE.md)** - Detailed project architecture and patterns (Chinese)
-- **[NixOS Options](https://search.nixos.org/options)** - Official NixOS options search
-- **[Nix Packages](https://search.nixos.org/packages)** - Nixpkgs package search
-- **[Home Manager Options](https://nix-community.github.io/home-manager/options.xhtml)** - HM options
-- **[Flake-parts](https://flake.parts/)** - Flake-parts documentation
-- **[import-tree](https://github.com/vic/import-tree)** - Auto-scan utility
-- **[nixos-facter](https://github.com/numtide/nixos-facter)** - Hardware detection
-- **[disko](https://github.com/nix-community/disko)** - Declarative partitioning
-- **[nixos-anywhere](https://github.com/nix-community/nixos-anywhere)** - Remote installation
+```bash
+./scripts/git-proxy.sh git push              # Git via proxy
+sudo ./scripts/nix-daemon-wsl-proxy.sh http  # Nix daemon proxy (WSL)
+sudo ./scripts/nixdaemon-proxy.sh http       # Nix daemon proxy (bare-metal/VM)
+```
 
 ## Inspiration
 
-This project is inspired by:
-
-- **[drupol/infra](https://github.com/drupol/infra)** - Decentralized module architecture
-- **[Refactoring my infrastructure-as-code configurations](https://not-a-number.io/2025/refactoring-my-infrastructure-as-code-configurations/)** - Design philosophy
-
-## Contributing
-
-This is a personal configuration repository. Feel free to:
-
-- Fork and adapt to your needs
-- Report issues or suggest improvements
-- Share your own patterns and ideas
+- **[vic/den](https://github.com/vic/den)** — Context-aware Dendritic Nix configurations
+- **[The Dendritic Pattern](https://github.com/vic/dendritic)** — Nixpkgs module system pattern
+- **[drupol/infra](https://github.com/drupol/infra)** — Decentralized module architecture
 
 ## License
 
-This project is available under the MIT License. See LICENSE for details.
-
-## Author
-
-**loss** - [GitHub](https://github.com/lossthannothing)
-
----
-
-**Note**: This configuration is tailored for personal use. Review and adapt settings before deploying to your own system.
+MIT
